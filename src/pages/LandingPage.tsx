@@ -5,7 +5,6 @@ import { Hero } from "@/components/home/Hero";
 import { About } from "@/components/home/About";
 import { Features } from "@/components/home/Features";
 import { Services } from "@/components/home/Services";
-import { ContactForm } from "@/components/home/ContactForm";
 import { DemoRequestForm } from "@/components/home/DemoRequestForm";
 
 const LandingPage: React.FC = () => {
@@ -53,11 +52,6 @@ const LandingPage: React.FC = () => {
               <DemoRequestForm />
             </div>
           </div>
-        </section>
-        
-        {/* Contact Section */}
-        <section id="contact">
-          <ContactForm />
         </section>
       </main>
       <footer className="w-full py-12 bg-[#0A0A0A]">
