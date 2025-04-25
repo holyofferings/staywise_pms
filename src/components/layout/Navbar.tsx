@@ -3,11 +3,14 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { StaywiseButton } from "@/components/ui/StaywiseButton";
 import { AuthModal } from "@/components/auth/AuthModal";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Moon, Sun } from "lucide-react";
+import { Toggle } from "@/components/ui/toggle";
+import { useTheme } from "@/hooks/use-theme";
 
 export const Navbar: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   const handleOpenAuthModal = () => {
     setIsAuthModalOpen(true);
@@ -16,6 +19,13 @@ export const Navbar: React.FC = () => {
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
+
+  const navItems = [
+    { label: "About", href: "#about" },
+    { label: "Features", href: "#features" },
+    { label: "Pricing", href: "#pricing" },
+    { label: "Contact", href: "#contact" },
+  ];
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-black/70 border-b border-white/10">
@@ -39,10 +49,23 @@ export const Navbar: React.FC = () => {
           
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-white/80 hover:text-white transition-colors">Features</a>
-            <a href="#pricing" className="text-white/80 hover:text-white transition-colors">Pricing</a>
-            <a href="#about" className="text-white/80 hover:text-white transition-colors">About</a>
-            <a href="#contact" className="text-white/80 hover:text-white transition-colors">Contact</a>
+            {navItems.map((item) => (
+              <a 
+                key={item.label}
+                href={item.href} 
+                className="text-white/80 hover:text-white transition-colors"
+              >
+                {item.label}
+              </a>
+            ))}
+            <Toggle
+              pressed={theme === 'dark'}
+              onPressedChange={toggleTheme}
+              aria-label="Toggle theme"
+              className="ml-2"
+            >
+              {theme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+            </Toggle>
           </div>
 
           <div className="hidden md:flex items-center gap-2">
@@ -59,7 +82,14 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center">
+          <div className="md:hidden flex items-center gap-4">
+            <Toggle
+              pressed={theme === 'dark'}
+              onPressedChange={toggleTheme}
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+            </Toggle>
             <button
               onClick={toggleMobileMenu}
               className="text-white p-2"
@@ -75,34 +105,16 @@ export const Navbar: React.FC = () => {
       {isMobileMenuOpen && (
         <div className="md:hidden bg-black/95 py-4 px-4 border-t border-white/10">
           <div className="flex flex-col gap-4">
-            <a 
-              href="#features" 
-              className="text-white/80 hover:text-white py-2"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Features
-            </a>
-            <a 
-              href="#pricing" 
-              className="text-white/80 hover:text-white py-2"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Pricing
-            </a>
-            <a 
-              href="#about" 
-              className="text-white/80 hover:text-white py-2"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              About
-            </a>
-            <a 
-              href="#contact" 
-              className="text-white/80 hover:text-white py-2"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Contact
-            </a>
+            {navItems.map((item) => (
+              <a 
+                key={item.label}
+                href={item.href} 
+                className="text-white/80 hover:text-white py-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                {item.label}
+              </a>
+            ))}
             <div className="flex flex-col gap-2 mt-4">
               <StaywiseButton 
                 variant="secondary" 
