@@ -59,14 +59,14 @@ export const Sidebar: React.FC = () => {
 
   const links = [
     { to: "/dashboard", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
-    { to: "/bookings", icon: <Calendar size={20} />, label: "Bookings" },
-    { to: "/rooms", icon: <Bed size={20} />, label: "Rooms" },
-    { to: "/ai-sales-agent", icon: <MessageSquare size={20} />, label: "AI Sales Agent" },
-    { to: "/ai-automation", icon: <Zap size={20} />, label: "AI Automation" },
-    { to: "/marketing", icon: <FileText size={20} />, label: "Marketing" },
-    { to: "/whatsapp-orders", icon: <Users size={20} />, label: "WhatsApp Orders" },
-    { to: "/qr-generator", icon: <QrCode size={20} />, label: "QR Generator" },
-    { to: "/settings", icon: <Settings size={20} />, label: "Settings" },
+    { to: "/dashboard/bookings", icon: <Calendar size={20} />, label: "Bookings" },
+    { to: "/dashboard/rooms", icon: <Bed size={20} />, label: "Rooms" },
+    { to: "/dashboard/ai-sales-agent", icon: <MessageSquare size={20} />, label: "AI Sales Agent" },
+    { to: "/dashboard/ai-automation", icon: <Zap size={20} />, label: "AI Automation" },
+    { to: "/dashboard/marketing", icon: <FileText size={20} />, label: "Marketing" },
+    { to: "/dashboard/orders", icon: <Users size={20} />, label: "WhatsApp Orders" },
+    { to: "/dashboard/qr-codes", icon: <QrCode size={20} />, label: "QR Generator" },
+    { to: "/dashboard/settings", icon: <Settings size={20} />, label: "Settings" },
   ];
 
   const toggleSidebar = () => {
