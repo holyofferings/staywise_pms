@@ -1,5 +1,6 @@
+
 import React from "react";
-import { Button } from "@/components/ui/Button";
+import { StaywiseButton } from "@/components/ui/StaywiseButton";
 
 export const Hero: React.FC = () => {
   const arrowIcon = (
@@ -25,10 +26,10 @@ export const Hero: React.FC = () => {
           <span>automation and AI solutions tailored to your needs</span>
         </p>
         <div className="flex gap-[15px]">
-          <Button variant="primary" icon={arrowIcon}>
+          <StaywiseButton variant="primary" icon={arrowIcon}>
             Our Services
-          </Button>
-          <Button variant="secondary">See Plans</Button>
+          </StaywiseButton>
+          <StaywiseButton variant="secondary">See Plans</StaywiseButton>
         </div>
       </div>
     </section>

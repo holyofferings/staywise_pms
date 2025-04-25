@@ -1,5 +1,6 @@
+
 import React, { useState } from "react";
-import { Button } from "@/components/ui/Button";
+import { StaywiseButton } from "@/components/ui/StaywiseButton";
 
 export const ContactForm: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -67,9 +68,9 @@ export const ContactForm: React.FC = () => {
               />
             </div>
 
-            <Button type="submit" variant="primary" className="w-full">
+            <StaywiseButton type="submit" variant="primary" className="w-full">
               Send Message
-            </Button>
+            </StaywiseButton>
           </form>
         )}
       </div>
