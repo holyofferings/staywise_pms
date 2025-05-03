@@ -1,0 +1,100 @@
+/**
+ * Universal theme styles
+ * This file contains CSS variables used throughout the application
+ * for consistent theming across all pages.
+ */
+
+/* Light theme (default) */
+:root {
+  /* Background & foreground */
+  --background: 0 0% 100%;
+  --foreground: 0 0% 6%;
+
+  /* Card components */
+  --card: 0 0% 98%;
+  --card-foreground: 0 0% 8%;
+
+  /* Popover components */
+  --popover: 0 0% 96%;
+  --popover-foreground: 0 0% 8%;
+
+  /* Button & UI elements */
+  --primary: 252 84% 54%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 0 0% 92%;
+  --secondary-foreground: 0 0% 8%;
+
+  --accent: 0 0% 94%;
+  --accent-foreground: 0 0% 8%;
+
+  /* Status colors */
+  --destructive: 0 84% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 142 76% 36%;
+  --success-foreground: 0 0% 100%;
+
+  /* UI borders & form elements */
+  --border: 0 0% 88%;
+  --input: 0 0% 88%;
+  --ring: 252 84% 54%;
+  --muted: 0 0% 92%;
+  --muted-foreground: 0 0% 45%;
+
+  /* Dashboard sidebar */
+  --sidebar-background: 0 0% 98%;
+  --sidebar-foreground: 0 0% 10%;
+  --sidebar-border: 0 0% 88%;
+  --sidebar-muted: 0 0% 60%;
+  --sidebar-active: 252 84% 54%;
+  --sidebar-active-foreground: 0 0% 100%;
+
+  /* Border radius */
+  --radius: 0.5rem;
+}
+
+/* Dark theme */
+.dark {
+  /* Background & foreground */
+  --background: 0 0% 6%;
+  --foreground: 0 0% 100%;
+
+  /* Card components */
+  --card: 0 0% 10%;
+  --card-foreground: 0 0% 98%;
+
+  /* Popover components */
+  --popover: 0 0% 8%;
+  --popover-foreground: 0 0% 98%;
+
+  /* Button & UI elements */
+  --primary: 252 84% 54%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 0 0% 15%;
+  --secondary-foreground: 0 0% 98%;
+
+  --accent: 0 0% 20%;
+  --accent-foreground: 0 0% 98%;
+
+  /* Status colors */
+  --destructive: 0 84% 42%;
+  --destructive-foreground: 0 0% 98%;
+  --success: 142 72% 29%;
+  --success-foreground: 0 0% 98%;
+
+  /* UI borders & form elements */
+  --border: 0 0% 20%;
+  --input: 0 0% 20%;
+  --ring: 252 84% 54%;
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 65%;
+
+  /* Dashboard sidebar */
+  --sidebar-background: 0 0% 8%;
+  --sidebar-foreground: 0 0% 95%;
+  --sidebar-border: 0 0% 20%;
+  --sidebar-muted: 0 0% 40%;
+  --sidebar-active: 252 84% 54%;
+  --sidebar-active-foreground: 0 0% 100%;
+} 

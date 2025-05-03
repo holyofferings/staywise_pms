@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -82,7 +81,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onOpenChange }) =>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="you@example.com" required />
+                <Input id="email" type="email" placeholder="you@example.com" required className="h-10" />
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -91,9 +90,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onOpenChange }) =>
                     Forgot password?
                   </Button>
                 </div>
-                <Input id="password" type="password" placeholder="••••••••" required />
+                <Input id="password" type="password" placeholder="••••••••" required className="h-10" />
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full h-[38px] bg-primary text-primary-foreground" disabled={isLoading}>
                 {isLoading ? "Logging in..." : "Login"}
               </Button>
             </form>
@@ -113,7 +112,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onOpenChange }) =>
               <Button 
                 type="button" 
                 variant="outline" 
-                className="w-full" 
+                className="w-full h-[38px]" 
                 onClick={handleGoogleLogin}
               >
                 Google
@@ -121,7 +120,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onOpenChange }) =>
               <Button 
                 type="button" 
                 variant="outline" 
-                className="w-full" 
+                className="w-full h-[38px]" 
                 onClick={handlePhoneLogin}
               >
                 Phone Number
@@ -133,21 +132,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onOpenChange }) =>
             <form onSubmit={handleSignup} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="fullName">Full Name</Label>
-                <Input id="fullName" placeholder="John Doe" required />
+                <Input id="fullName" placeholder="John Doe" required className="h-10" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="hotelName">Hotel Name</Label>
-                <Input id="hotelName" placeholder="Staywise Hotel" required />
+                <Input id="hotelName" placeholder="Staywise Hotel" required className="h-10" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="signup-email">Email</Label>
-                <Input id="signup-email" type="email" placeholder="you@example.com" required />
+                <Input id="signup-email" type="email" placeholder="you@example.com" required className="h-10" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="signup-password">Password</Label>
-                <Input id="signup-password" type="password" placeholder="••••••••" required />
+                <Input id="signup-password" type="password" placeholder="••••••••" required className="h-10" />
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full h-[38px] bg-primary text-primary-foreground" disabled={isLoading}>
                 {isLoading ? "Creating account..." : "Create Account"}
               </Button>
             </form>
@@ -167,7 +166,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onOpenChange }) =>
               <Button 
                 type="button" 
                 variant="outline" 
-                className="w-full" 
+                className="w-full h-[38px]" 
                 onClick={handleGoogleLogin}
               >
                 Google

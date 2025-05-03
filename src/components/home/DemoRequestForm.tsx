@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { StaywiseButton } from "@/components/ui/StaywiseButton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,10 +46,10 @@ export const DemoRequestForm: React.FC = () => {
   };
 
   return (
-    <Card className="w-full max-w-md bg-[rgba(255,255,255,0.05)] border-[rgba(255,255,255,0.1)] text-white">
+    <Card className="w-full max-w-md bg-card/30 border-border text-card-foreground">
       <CardHeader className="pb-2">
         <CardTitle className="text-2xl">Request a Demo</CardTitle>
-        <CardDescription className="text-white/70">
+        <CardDescription className="text-foreground/70">
           Fill out the form below and our team will get in touch with you shortly
         </CardDescription>
       </CardHeader>
@@ -67,7 +66,7 @@ export const DemoRequestForm: React.FC = () => {
               onChange={handleChange}
               placeholder="John Doe"
               required
-              className="bg-[rgba(255,255,255,0.07)] border-[rgba(255,255,255,0.1)] text-white placeholder:text-white/40"
+              className="bg-background/20 border-input text-foreground placeholder:text-foreground/40"
             />
           </div>
           <div>
@@ -81,7 +80,7 @@ export const DemoRequestForm: React.FC = () => {
               onChange={handleChange}
               placeholder="Staywise Hotel"
               required
-              className="bg-[rgba(255,255,255,0.07)] border-[rgba(255,255,255,0.1)] text-white placeholder:text-white/40"
+              className="bg-background/20 border-input text-foreground placeholder:text-foreground/40"
             />
           </div>
           <div>
@@ -96,7 +95,7 @@ export const DemoRequestForm: React.FC = () => {
               onChange={handleChange}
               placeholder="you@example.com"
               required
-              className="bg-[rgba(255,255,255,0.07)] border-[rgba(255,255,255,0.1)] text-white placeholder:text-white/40"
+              className="bg-background/20 border-input text-foreground placeholder:text-foreground/40"
             />
           </div>
           <div>
@@ -111,7 +110,7 @@ export const DemoRequestForm: React.FC = () => {
               onChange={handleChange}
               placeholder="+1 (123) 456-7890"
               required
-              className="bg-[rgba(255,255,255,0.07)] border-[rgba(255,255,255,0.1)] text-white placeholder:text-white/40"
+              className="bg-background/20 border-input text-foreground placeholder:text-foreground/40"
             />
           </div>
           <div>
@@ -126,7 +125,7 @@ export const DemoRequestForm: React.FC = () => {
               placeholder="Tell us about your specific needs..."
               rows={3}
               required
-              className="w-full bg-[rgba(255,255,255,0.07)] border border-[rgba(255,255,255,0.1)] rounded-md px-3 py-2 text-white placeholder:text-white/40 resize-none"
+              className="w-full bg-background/20 border border-input rounded-md px-3 py-2 text-foreground placeholder:text-foreground/40 resize-none"
             />
           </div>
           <StaywiseButton
