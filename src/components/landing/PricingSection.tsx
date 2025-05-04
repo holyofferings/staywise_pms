@@ -55,12 +55,12 @@ const PricingSection = () => {
   }
 
   // Function to get the adjusted price based on billing period
-  const getPrice = (price: string, period: string) => {
+  const getPrice = (price: string, period: string, planName: string) => {
     if (billing === 'monthly') {
-      // Extract the numeric part and convert to monthly price (divide by 12)
-      const numericPrice = parseInt(price.replace(/[^0-9]/g, ''));
-      const monthlyPrice = Math.round(numericPrice / 12);
-      return `₹${monthlyPrice}`;
+      // Use fixed monthly prices based on plan name
+      if (planName === "Basic") return "₹800";
+      if (planName === "Professional") return "₹1200";
+      if (planName === "Enterprise") return "₹2200";
     }
     return price;
   };
@@ -118,7 +118,7 @@ const PricingSection = () => {
               
               <div className="flex items-baseline mt-4 mb-6">
                 <span className="text-4xl font-bold text-foreground">
-                  {getPrice(plan.price, plan.period)}
+                  {getPrice(plan.price, plan.period, plan.name)}
                 </span>
                 <span className="ml-2 text-foreground/70">
                   {getPeriod()}
