@@ -35,8 +35,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
         {/* Top navigation */}
         <Header />
         
-        {/* Page content */}
-        <main className="p-4 sm:p-6">
+        {/* Page content - added max-w-screen-xl and mx-auto to constrain width */}
+        <main className="p-4 sm:p-6 max-w-screen-xl mx-auto">
           {children}
         </main>
       </div>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,8 @@ interface Booking {
   checkOut: Date;
   roomNumber: string;
   status: "confirmed" | "pending" | "cancelled";
+  notes?: string;
+  price?: number;
 }
 
 interface Room {
@@ -83,21 +85,29 @@ const Bookings: React.FC = () => {
   const [activeView, setActiveView] = useState<"grid" | "management" | "calendar">("grid");
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [isRoomDetailsOpen, setIsRoomDetailsOpen] = useState(false);
+  const [isRoomHistoryOpen, setIsRoomHistoryOpen] = useState(false);
+  const [isEditRoomOpen, setIsEditRoomOpen] = useState(false);
+  const [roomHistory, setRoomHistory] = useState<Array<{date: string, guest: string, action: string}>>([
+    { date: "2024-02-15", guest: "John Smith", action: "Check-in" },
+    { date: "2024-02-18", guest: "John Smith", action: "Check-out" },
+    { date: "2024-03-01", guest: "Emily Wilson", action: "Check-in" },
+    { date: "2024-03-05", guest: "Emily Wilson", action: "Check-out" },
+  ]);
   
   // Sample rooms data
   const [rooms, setRooms] = useState<Room[]>([
-    { id: "1", number: "101", type: "single", status: "occupied", price: 89, capacity: 1, currentGuest: "John Smith" },
-    { id: "2", number: "102", type: "single", status: "available", price: 89, capacity: 1 },
-    { id: "3", number: "103", type: "single", status: "maintenance", price: 89, capacity: 1 },
-    { id: "4", number: "104", type: "double", status: "occupied", price: 129, capacity: 2, currentGuest: "Sarah Johnson" },
-    { id: "5", number: "105", type: "double", status: "available", price: 129, capacity: 2 },
-    { id: "6", number: "106", type: "double", status: "reserved", price: 129, capacity: 2, currentGuest: "Michael Brown" },
-    { id: "7", number: "201", type: "single", status: "available", price: 89, capacity: 1 },
-    { id: "8", number: "202", type: "single", status: "available", price: 89, capacity: 1 },
-    { id: "9", number: "203", type: "double", status: "occupied", price: 129, capacity: 2, currentGuest: "Emily Wilson" },
-    { id: "10", number: "204", type: "suite", status: "available", price: 199, capacity: 4 },
-    { id: "11", number: "205", type: "suite", status: "occupied", price: 199, capacity: 4, currentGuest: "Robert Johnson" },
-    { id: "12", number: "206", type: "suite", status: "reserved", price: 199, capacity: 4 },
+    { id: "1", number: "101", type: "single", status: "occupied", price: 2500, capacity: 1, currentGuest: "John Smith" },
+    { id: "2", number: "102", type: "single", status: "available", price: 2500, capacity: 1 },
+    { id: "3", number: "103", type: "single", status: "maintenance", price: 2500, capacity: 1 },
+    { id: "4", number: "104", type: "double", status: "occupied", price: 3900, capacity: 2, currentGuest: "Sarah Johnson" },
+    { id: "5", number: "105", type: "double", status: "available", price: 3900, capacity: 2 },
+    { id: "6", number: "106", type: "double", status: "reserved", price: 3900, capacity: 2, currentGuest: "Michael Brown" },
+    { id: "7", number: "201", type: "single", status: "available", price: 2500, capacity: 1 },
+    { id: "8", number: "202", type: "single", status: "available", price: 2500, capacity: 1 },
+    { id: "9", number: "203", type: "double", status: "occupied", price: 3900, capacity: 2, currentGuest: "Emily Wilson" },
+    { id: "10", number: "204", type: "suite", status: "available", price: 6500, capacity: 4 },
+    { id: "11", number: "205", type: "suite", status: "occupied", price: 6500, capacity: 4, currentGuest: "Robert Johnson" },
+    { id: "12", number: "206", type: "suite", status: "reserved", price: 6500, capacity: 4 },
   ]);
 
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
@@ -108,6 +118,17 @@ const Bookings: React.FC = () => {
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   const [isAutoSync, setIsAutoSync] = useState(false);
   const [isSyncStatus, setIsSyncStatus] = useState(false);
+
+  // Add this new state for the reservation dialog
+  const [isReservationDialogOpen, setIsReservationDialogOpen] = useState(false);
+  const [newReservation, setNewReservation] = useState<Partial<Booking>>({
+    guestName: "",
+    checkIn: new Date(),
+    checkOut: new Date(new Date().setDate(new Date().getDate() + 1)),
+    status: "confirmed",
+    notes: "",
+    price: undefined,
+  });
 
   const handleAddBooking = () => {
     if (newBooking.guestName && newBooking.roomNumber) {
@@ -163,6 +184,10 @@ const Bookings: React.FC = () => {
   const handleViewRoom = (room: Room) => {
     setSelectedRoom(room);
     setIsRoomDetailsOpen(true);
+    setNewReservation(prev => ({
+      ...prev,
+      price: room.price
+    }));
   };
 
   const getRoomStatusColor = (status: string) => {
@@ -242,91 +267,324 @@ const Bookings: React.FC = () => {
     });
   };
 
+  const handleCheckOutGuest = (roomId: string) => {
+    // Find the room
+    const updatedRooms = rooms.map(room => {
+      if (room.id === roomId) {
+        // Change status to available and remove current guest
+        return { ...room, status: "available" as const, currentGuest: undefined };
+      }
+      return room;
+    });
+    setRooms(updatedRooms);
+    setIsRoomDetailsOpen(false);
+    
+    // Update the selected room to reflect changes
+    const updatedRoom = updatedRooms.find(room => room.id === roomId);
+    if (updatedRoom) {
+      setSelectedRoom(updatedRoom);
+    }
+    
+    toast({
+      title: "Guest checked out",
+      description: `Guest has been checked out from room ${selectedRoom?.number}`,
+    });
+  };
+
+  const handleToggleMaintenance = (roomId: string) => {
+    // Find the room
+    const updatedRooms = rooms.map(room => {
+      if (room.id === roomId) {
+        // Toggle between maintenance and available
+        const newStatus = room.status === "maintenance" ? "available" as const : "maintenance" as const;
+        return { 
+          ...room, 
+          status: newStatus, 
+          // If setting to maintenance, remove current guest
+          currentGuest: newStatus === "maintenance" ? undefined : room.currentGuest 
+        };
+      }
+      return room;
+    });
+    setRooms(updatedRooms);
+    
+    // Update the selected room to reflect changes
+    const updatedRoom = updatedRooms.find(room => room.id === roomId);
+    if (updatedRoom) {
+      setSelectedRoom(updatedRoom);
+    }
+    
+    toast({
+      title: selectedRoom?.status === "maintenance" ? "Room Available" : "Room Under Maintenance",
+      description: selectedRoom?.status === "maintenance" 
+        ? `Room ${selectedRoom?.number} is now available` 
+        : `Room ${selectedRoom?.number} is now under maintenance`,
+    });
+  };
+
+  const handleUpdateRoomInfo = (roomId: string, updatedInfo: Partial<Room>) => {
+    // Find and update the room
+    const updatedRooms = rooms.map(room => {
+      if (room.id === roomId) {
+        return { ...room, ...updatedInfo };
+      }
+      return room;
+    });
+    setRooms(updatedRooms);
+    
+    // Update the selected room to reflect changes
+    const updatedRoom = updatedRooms.find(room => room.id === roomId);
+    if (updatedRoom) {
+      setSelectedRoom(updatedRoom);
+    }
+    
+    setIsEditRoomOpen(false);
+    
+    toast({
+      title: "Room updated",
+      description: `Room ${selectedRoom?.number} information has been updated`,
+    });
+  };
+
+  // Add API integration functions
+  const fetchReservationsData = async () => {
+    try {
+      const response = await fetch('/api/reservations');
+      if (!response.ok) {
+        throw new Error('Failed to fetch reservations');
+      }
+      const data = await response.json();
+      
+      // Update state with data from API
+      if (data.reservations) {
+        // Convert string dates to Date objects
+        const formattedBookings = data.reservations.map((booking: any) => ({
+          ...booking,
+          checkIn: new Date(booking.checkIn),
+          checkOut: new Date(booking.checkOut),
+        }));
+        setBookings(formattedBookings);
+      }
+      
+      if (data.rooms) {
+        setRooms(data.rooms);
+      }
+    } catch (error) {
+      console.error('Error fetching reservations:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load reservations and rooms data",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Create a reservation on the backend
+  const createReservation = async (reservation: {
+    guestName: string;
+    roomNumber: string;
+    checkIn: string; // ISO date string
+    checkOut: string; // ISO date string
+    price?: number;   // Optional custom price
+    notes?: string;   // Optional notes
+  }) => {
+    try {
+      const response = await fetch('/api/reservations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(reservation),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create reservation');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating reservation:', error);
+      throw error;
+    }
+  };
+
+  // Update the handleMakeReservation function to use the API
+  const handleMakeReservation = async () => {
+    if (selectedRoom && newReservation.guestName) {
+      try {
+        // Format dates for API
+        const reservation = {
+          guestName: newReservation.guestName as string,
+          roomNumber: selectedRoom.number,
+          checkIn: (newReservation.checkIn as Date).toISOString(),
+          checkOut: (newReservation.checkOut as Date).toISOString(),
+          price: newReservation.price,     // Include custom price if set
+          notes: newReservation.notes      // Include notes if added
+        };
+        
+        // Call API to create reservation
+        const result = await createReservation(reservation);
+        
+        if (result && result.reservation) {
+          // Convert string dates back to Date objects for UI
+          const newBooking: Booking = {
+            id: result.reservation.id,
+            guestName: result.reservation.guestName,
+            checkIn: new Date(result.reservation.checkIn),
+            checkOut: new Date(result.reservation.checkOut),
+            roomNumber: result.reservation.roomNumber,
+            status: result.reservation.status as "confirmed" | "pending" | "cancelled",
+          };
+          
+          // Add to local state
+          setBookings([...bookings, newBooking]);
+          
+          // Update room status locally
+          if (result.room) {
+            const updatedRooms = rooms.map(room => {
+              if (room.id === selectedRoom.id) {
+                return { 
+                  ...room, 
+                  status: result.room.status as any, 
+                  currentGuest: result.room.currentGuest 
+                };
+              }
+              return room;
+            });
+            setRooms(updatedRooms);
+            
+            // Update the selected room
+            const updatedRoom = updatedRooms.find(room => room.id === selectedRoom.id);
+            if (updatedRoom) {
+              setSelectedRoom(updatedRoom);
+            }
+          }
+          
+          // Reset form and close dialogs
+          setNewReservation({
+            guestName: "",
+            checkIn: new Date(),
+            checkOut: new Date(new Date().setDate(new Date().getDate() + 1)),
+            status: "confirmed",
+            notes: "",
+            price: undefined,
+          });
+          setIsReservationDialogOpen(false);
+          setIsRoomDetailsOpen(false);
+          
+          toast({
+            title: "Reservation created",
+            description: `Room ${selectedRoom.number} has been reserved for ${newReservation.guestName}`,
+          });
+        }
+      } catch (error: any) {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to create reservation",
+          variant: "destructive",
+        });
+      }
+    } else {
+      toast({
+        title: "Error",
+        description: "Please enter a guest name",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Load initial data when component mounts
+  useEffect(() => {
+    fetchReservationsData();
+  }, []);
+
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Bookings</h1>
-          <p className="text-subtle">Manage your hotel bookings and reservations</p>
-        </div>
-
-        <div className="flex justify-end gap-2 mb-6">
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Booking
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Booking</DialogTitle>
-                <DialogDescription>
-                  Enter the guest information and booking details below.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="guest-name" className="text-right">Guest Name</Label>
-                  <Input
-                    id="guest-name"
-                    value={newBooking.guestName}
-                    onChange={(e) => setNewBooking({ ...newBooking, guestName: e.target.value })}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="room-number" className="text-right">Room Number</Label>
-                  <Input
-                    id="room-number"
-                    value={newBooking.roomNumber}
-                    onChange={(e) => setNewBooking({ ...newBooking, roomNumber: e.target.value })}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="check-in" className="text-right">Check-in Date</Label>
-                  <div className="col-span-3">
-                    <Calendar
-                      mode="single"
-                      selected={newBooking.checkIn}
-                      onSelect={(date) => setNewBooking({ ...newBooking, checkIn: date || new Date() })}
+      <div className="max-w-6xl mx-auto px-6 space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Room Bookings</h1>
+            <p className="text-slate-500 dark:text-slate-400">Manage your hotel room bookings and reservations</p>
+          </div>
+          <div className="flex space-x-2">
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Booking
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New Booking</DialogTitle>
+                  <DialogDescription>
+                    Enter the guest information and booking details below.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="guest-name" className="text-right">Guest Name</Label>
+                    <Input
+                      id="guest-name"
+                      value={newBooking.guestName}
+                      onChange={(e) => setNewBooking({ ...newBooking, guestName: e.target.value })}
+                      className="col-span-3"
                     />
                   </div>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="check-out" className="text-right">Check-out Date</Label>
-                  <div className="col-span-3">
-                    <Calendar
-                      mode="single"
-                      selected={newBooking.checkOut}
-                      onSelect={(date) => setNewBooking({ ...newBooking, checkOut: date || new Date() })}
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="room-number" className="text-right">Room Number</Label>
+                    <Input
+                      id="room-number"
+                      value={newBooking.roomNumber}
+                      onChange={(e) => setNewBooking({ ...newBooking, roomNumber: e.target.value })}
+                      className="col-span-3"
                     />
                   </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="check-in" className="text-right">Check-in Date</Label>
+                    <div className="col-span-3">
+                      <Calendar
+                        mode="single"
+                        selected={newBooking.checkIn}
+                        onSelect={(date) => setNewBooking({ ...newBooking, checkIn: date || new Date() })}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="check-out" className="text-right">Check-out Date</Label>
+                    <div className="col-span-3">
+                      <Calendar
+                        mode="single"
+                        selected={newBooking.checkOut}
+                        onSelect={(date) => setNewBooking({ ...newBooking, checkOut: date || new Date() })}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="status" className="text-right">Status</Label>
+                    <Select
+                      value={newBooking.status}
+                      onValueChange={(value) => setNewBooking({ ...newBooking, status: value as "confirmed" | "pending" | "cancelled" })}
+                    >
+                      <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="confirmed">Confirmed</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="status" className="text-right">Status</Label>
-                  <Select
-                    value={newBooking.status}
-                    onValueChange={(value) => setNewBooking({ ...newBooking, status: value as "confirmed" | "pending" | "cancelled" })}
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="confirmed">Confirmed</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handleAddBooking}>Add Booking</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
+                  <Button onClick={handleAddBooking}>Add Booking</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         <Tabs defaultValue="grid" className="mb-6" onValueChange={(value) => {
@@ -824,7 +1082,7 @@ const Bookings: React.FC = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="font-medium">Price per night:</span>
-                    <span>${selectedRoom.price}</span>
+                    <span>₹{selectedRoom.price}</span>
                   </div>
                   {selectedRoom.currentGuest && (
                     <div className="flex items-center justify-between">
@@ -837,12 +1095,20 @@ const Bookings: React.FC = () => {
                     <h4 className="font-medium mb-2">Room Actions</h4>
                     <div className="grid grid-cols-2 gap-2">
                       {selectedRoom.status === "available" && (
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setIsReservationDialogOpen(true)}
+                        >
                           Make Reservation
                         </Button>
                       )}
                       {selectedRoom.status === "occupied" && (
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleCheckOutGuest(selectedRoom.id)}
+                        >
                           Check Out Guest
                         </Button>
                       )}
@@ -851,14 +1117,26 @@ const Bookings: React.FC = () => {
                           Check In Guest
                         </Button>
                       )}
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setIsRoomHistoryOpen(true)}
+                      >
                         View Room History
                       </Button>
-                      <Button variant="outline" size="sm" 
-                        className={selectedRoom.status === "maintenance" ? "bg-green-500/20" : "bg-yellow-500/20"}>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleToggleMaintenance(selectedRoom.id)}
+                        className={selectedRoom.status === "maintenance" ? "bg-green-500/20" : "bg-yellow-500/20"}
+                      >
                         {selectedRoom.status === "maintenance" ? "Mark as Available" : "Mark for Maintenance"}
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setIsEditRoomOpen(true)}
+                      >
                         Edit Room Info
                       </Button>
                     </div>
@@ -869,6 +1147,281 @@ const Bookings: React.FC = () => {
                 </DialogFooter>
               </>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Room History Dialog */}
+        <Dialog open={isRoomHistoryOpen} onOpenChange={setIsRoomHistoryOpen}>
+          <DialogContent>
+            {selectedRoom && (
+              <>
+                <DialogHeader>
+                  <DialogTitle>Room {selectedRoom.number} History</DialogTitle>
+                  <DialogDescription>
+                    Past guest records and activity
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4 max-h-[400px] overflow-y-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Guest</TableHead>
+                        <TableHead>Activity</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {roomHistory.map((record, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{record.date}</TableCell>
+                          <TableCell>{record.guest}</TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              record.action === "Check-in" ? "bg-green-500/20 text-green-500" :
+                              "bg-blue-500/20 text-blue-500"
+                            }`}>
+                              {record.action}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsRoomHistoryOpen(false)}>Close</Button>
+                </DialogFooter>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Room Dialog */}
+        <Dialog open={isEditRoomOpen} onOpenChange={setIsEditRoomOpen}>
+          <DialogContent>
+            {selectedRoom && (
+              <>
+                <DialogHeader>
+                  <DialogTitle>Edit Room {selectedRoom.number}</DialogTitle>
+                  <DialogDescription>
+                    Update room information
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="room-number" className="text-right">Room Number</Label>
+                    <Input
+                      id="room-number"
+                      value={selectedRoom.number}
+                      onChange={(e) => setSelectedRoom({ ...selectedRoom, number: e.target.value })}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="room-type" className="text-right">Room Type</Label>
+                    <Select
+                      value={selectedRoom.type}
+                      onValueChange={(value) => setSelectedRoom({ ...selectedRoom, type: value as "single" | "double" | "suite" })}
+                    >
+                      <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Select room type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="single">Single</SelectItem>
+                        <SelectItem value="double">Double</SelectItem>
+                        <SelectItem value="suite">Suite</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="room-price" className="text-right">Price per Night</Label>
+                    <Input
+                      id="room-price"
+                      type="number"
+                      value={selectedRoom.price}
+                      onChange={(e) => setSelectedRoom({ ...selectedRoom, price: Number(e.target.value) })}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="room-capacity" className="text-right">Capacity</Label>
+                    <Input
+                      id="room-capacity"
+                      type="number"
+                      value={selectedRoom.capacity}
+                      onChange={(e) => setSelectedRoom({ ...selectedRoom, capacity: Number(e.target.value) })}
+                      className="col-span-3"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsEditRoomOpen(false)}>Cancel</Button>
+                  <Button onClick={() => handleUpdateRoomInfo(selectedRoom.id, {
+                    number: selectedRoom.number,
+                    type: selectedRoom.type,
+                    price: selectedRoom.price,
+                    capacity: selectedRoom.capacity
+                  })}>
+                    Update Room
+                  </Button>
+                </DialogFooter>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* New Reservation Dialog */}
+        <Dialog open={isReservationDialogOpen} onOpenChange={setIsReservationDialogOpen}>
+          <DialogContent className="max-w-md overflow-hidden">
+            <DialogHeader className="pb-2">
+              <DialogTitle className="text-xl flex items-center gap-2">
+                {selectedRoom && (
+                  <span className={`w-3 h-3 rounded-full ${getRoomStatusColor(selectedRoom.status)}`}></span>
+                )}
+                New Reservation
+              </DialogTitle>
+              <DialogDescription>
+                {selectedRoom && `Create a reservation for Room ${selectedRoom.number}`}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 pt-2">
+              {selectedRoom && (
+                <div className={`p-3 rounded-md border-l-4 ${getRoomStatusColor(selectedRoom.status)} bg-background shadow-sm`}>
+                  <h4 className="font-medium text-sm mb-1">Room Details</h4>
+                  <div className="grid grid-cols-3 gap-2 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Number</p>
+                      <p className="font-medium">{selectedRoom.number}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Type</p>
+                      <p className="font-medium capitalize">{selectedRoom.type}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Price</p>
+                      <p className="font-medium">₹{selectedRoom.price}/night</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div>
+                <Label htmlFor="guest-name" className="text-sm font-medium mb-1.5 block">Guest Name</Label>
+                <Input
+                  id="guest-name"
+                  placeholder="Enter guest name"
+                  value={newReservation.guestName}
+                  onChange={(e) => setNewReservation({ ...newReservation, guestName: e.target.value })}
+                  className="w-full"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="check-in" className="text-sm font-medium mb-1.5 block">Check-in Date</Label>
+                  <Input
+                    id="check-in"
+                    type="date"
+                    value={newReservation.checkIn ? format(newReservation.checkIn as Date, 'yyyy-MM-dd') : ''}
+                    min={format(new Date(), 'yyyy-MM-dd')}
+                    onChange={(e) => {
+                      const date = e.target.value ? new Date(e.target.value) : new Date();
+                      setNewReservation({ 
+                        ...newReservation, 
+                        checkIn: date,
+                        // Ensure checkout is after checkin
+                        checkOut: date > (newReservation.checkOut as Date) ? 
+                          new Date(date.getTime() + 86400000) : newReservation.checkOut
+                      });
+                    }}
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="check-out" className="text-sm font-medium mb-1.5 block">Check-out Date</Label>
+                  <Input
+                    id="check-out"
+                    type="date"
+                    value={newReservation.checkOut ? format(newReservation.checkOut as Date, 'yyyy-MM-dd') : ''}
+                    min={newReservation.checkIn ? format(new Date((newReservation.checkIn as Date).getTime() + 86400000), 'yyyy-MM-dd') : format(new Date(Date.now() + 86400000), 'yyyy-MM-dd')}
+                    onChange={(e) => {
+                      const date = e.target.value ? new Date(e.target.value) : new Date();
+                      setNewReservation({ ...newReservation, checkOut: date });
+                    }}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="price-per-night" className="text-sm font-medium mb-1.5 block">Price Per Night</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</span>
+                  <Input
+                    id="price-per-night"
+                    type="number"
+                    placeholder={selectedRoom ? selectedRoom.price.toString() : "0"}
+                    value={newReservation.price?.toString() || ''}
+                    onChange={(e) => {
+                      const value = e.target.value ? parseFloat(e.target.value) : undefined;
+                      setNewReservation({ ...newReservation, price: value });
+                    }}
+                    className="w-full pl-7"
+                    min="0"
+                    step="1"
+                  />
+                </div>
+                {selectedRoom && !newReservation.price && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Using room's default price: ₹{selectedRoom.price}/night
+                  </p>
+                )}
+              </div>
+              
+              <div>
+                <Label htmlFor="reservation-notes" className="text-sm font-medium mb-1.5 block">Notes (Optional)</Label>
+                <Input
+                  id="reservation-notes"
+                  placeholder="Any special requests or notes"
+                  onChange={(e) => setNewReservation({ ...newReservation, notes: e.target.value })}
+                  className="w-full"
+                />
+              </div>
+              
+              {newReservation.checkIn && newReservation.checkOut && (
+                <div className="bg-muted p-3 rounded-md text-sm">
+                  <p className="font-medium">Reservation Summary</p>
+                  <p className="flex justify-between mt-1">
+                    <span className="text-muted-foreground">Duration:</span>
+                    <span>{Math.ceil(
+                      ((newReservation.checkOut as Date).getTime() - (newReservation.checkIn as Date).getTime()) / 
+                      (1000 * 60 * 60 * 24)
+                    )} nights</span>
+                  </p>
+                  {selectedRoom && (
+                    <p className="flex justify-between mt-1">
+                      <span className="text-muted-foreground">Total price:</span>
+                      <span className="font-medium">₹{(newReservation.price || selectedRoom.price) * Math.ceil(
+                        ((newReservation.checkOut as Date).getTime() - (newReservation.checkIn as Date).getTime()) / 
+                        (1000 * 60 * 60 * 24)
+                      )}</span>
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            <DialogFooter className="mt-4 gap-2">
+              <Button variant="outline" onClick={() => setIsReservationDialogOpen(false)}>Cancel</Button>
+              <Button 
+                onClick={handleMakeReservation} 
+                disabled={!newReservation.guestName || !newReservation.checkIn || !newReservation.checkOut}
+                className="relative overflow-hidden"
+              >
+                <span>Make Reservation</span>
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

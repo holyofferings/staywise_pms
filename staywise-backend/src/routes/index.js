@@ -11,6 +11,7 @@ const automationRoutes = require('./automation.routes');
 const qrcodeRoutes = require('./qrcode.routes');
 const aiRoutes = require('./ai.routes');
 const marketingRoutes = require('./marketing.routes');
+const invoiceRoutes = require('./invoiceRoutes');
 
 // Root route
 router.get('/', (req, res) => {
@@ -31,5 +32,6 @@ router.use('/automations', automationRoutes);
 router.use('/qrcodes', qrcodeRoutes);
 router.use('/ai', aiRoutes);
 router.use('/marketing', marketingRoutes);
+router.use('/invoices', invoiceRoutes);
 
 module.exports = router; 

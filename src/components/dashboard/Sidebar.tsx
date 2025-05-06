@@ -65,7 +65,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
     { to: "/dashboard", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
     { to: "/dashboard/bookings", icon: <Calendar size={20} />, label: "Bookings" },
     { to: "/dashboard/rooms", icon: <Bed size={20} />, label: "Rooms" },
-    
+    { to: "/dashboard/invoices", icon: <FileText className="h-5 w-5" />, label: "Invoice Manager" },
     { to: "/dashboard/ai-sales-agent", icon: <MessageSquare size={20} />, label: "AI Sales Agent" },
     { to: "/dashboard/ai-automation", icon: <Zap size={20} />, label: "AI Automation" },
     { to: "/dashboard/marketing", icon: <FileText size={20} />, label: "Marketing" },

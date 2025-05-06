@@ -88,12 +88,19 @@ const HeroSection = () => {
             </button>
           </div>
 
-          <img
-            src="https://cdn.builder.io/api/v1/image/assets/TEMP/f25527dd44f41bf9c8cd1afe0f24f9fa76b6609a?placeholderIfAbsent=true&apiKey=602006ab0872494795ebb36066caa256"
-            className="object-contain z-10 self-stretch mb-0 w-full aspect-[1.49] max-md:mb-2.5 max-md:max-w-full rounded-lg"
-            style={{ backgroundColor: imageBackgroundColor }}
-            alt="Hotel operations dashboard"
-          />
+          <div className="mt-10 w-full max-w-[1000px] mx-auto rounded-xl overflow-hidden shadow-lg">
+            <video 
+              className="w-full aspect-video object-cover" 
+              autoPlay 
+              loop 
+              muted 
+              playsInline
+              controls
+            >
+              <source src="/demo-video.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
         </div>
       </div>
     </section>

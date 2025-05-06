@@ -16,6 +16,7 @@ import MarketingTemplates from "./pages/dashboard/MarketingTemplates";
 import WhatsappOrders from "./pages/dashboard/WhatsappOrders";
 import QrCodeGenerator from "./pages/dashboard/QrCodeGenerator";
 import Settings from "./pages/dashboard/Settings";
+import Billing from "./pages/dashboard/Billing";
 import NotFound from "./pages/NotFound";
 import RequireAuth from "./components/auth/RequireAuth";
 
@@ -45,6 +46,7 @@ const App = () => {
               <Route path="/dashboard/marketing" element={<MarketingTemplates />} />
               <Route path="/dashboard/orders" element={<WhatsappOrders />} />
               <Route path="/dashboard/qr-codes" element={<QrCodeGenerator />} />
+              <Route path="/dashboard/invoices" element={<Billing />} />
               <Route path="/dashboard/settings" element={<Settings />} />
             </Route>
             
