@@ -1,6 +1,8 @@
 import axios from 'axios';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+// Import jspdf-autotable dynamically to avoid build issues
+// This will be loaded at runtime when downloadInvoicePdf is called
+// import 'jspdf-autotable';
 
 // Add type declaration for jspdf-autotable
 declare module 'jspdf' {

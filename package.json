@@ -58,6 +58,7 @@
     "firebase": "^11.6.1",
     "gsap": "^3.12.7",
     "input-otp": "^1.2.4",
+    "jspdf-autotable": "^5.0.2",
     "locomotive-scroll": "^4.1.4",
     "lucide-react": "^0.462.0",
     "nanoid": "^5.1.5",
