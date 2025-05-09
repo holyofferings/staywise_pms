@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit, Trash2, Upload, Info, Wand, Loader2 } from "lucide-react";
+import { Plus, Edit, Trash2, Upload, Info, Wand, Loader2, MessageSquare } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
@@ -138,6 +138,7 @@ const Rooms: React.FC = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isRoomDetailsOpen, setIsRoomDetailsOpen] = useState(false);
+  const [isManualAddOpen, setIsManualAddOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [newRoom, setNewRoom] = useState<Partial<Room>>({
     number: "",
@@ -374,9 +375,53 @@ const Rooms: React.FC = () => {
             >
               <Wand className="mr-2 h-4 w-4" /> Quick Add Rooms
             </Button>
-            <Button onClick={() => setIsAddDialogOpen(true)} variant="default">
-              <Plus className="mr-2 h-4 w-4" /> Add New Room
-            </Button>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" /> Add New Room
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Add New Room</DialogTitle>
+                  <DialogDescription>
+                    Choose how you want to add a new room
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <Button
+                      variant="outline"
+                      className="h-32 flex flex-col items-center justify-center gap-2"
+                      onClick={() => {
+                        setIsAddDialogOpen(false);
+                        setIsQuickAddDialogOpen(true);
+                      }}
+                    >
+                      <MessageSquare className="h-8 w-8" />
+                      <span className="font-medium">Add by Prompt</span>
+                      <span className="text-sm text-muted-foreground text-center">
+                        Use AI to help you create rooms
+                      </span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-32 flex flex-col items-center justify-center gap-2"
+                      onClick={() => {
+                        setIsAddDialogOpen(false);
+                        setIsManualAddOpen(true);
+                      }}
+                    >
+                      <Edit className="h-8 w-8" />
+                      <span className="font-medium">Add Manually</span>
+                      <span className="text-sm text-muted-foreground text-center">
+                        Fill out the room form yourself
+                      </span>
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
@@ -481,8 +526,8 @@ const Rooms: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Add Room Dialog */}
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        {/* Manual Add Room Dialog */}
+        <Dialog open={isManualAddOpen} onOpenChange={setIsManualAddOpen}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Add New Room</DialogTitle>
@@ -559,19 +604,23 @@ const Rooms: React.FC = () => {
                   </Select>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="price">Price per Night ($)</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    value={newRoom.price}
-                    onChange={(e) =>
-                      setNewRoom({
-                        ...newRoom,
-                        price: parseFloat(e.target.value) || 0,
-                      })
-                    }
-                    required
-                  />
+                  <Label htmlFor="price">Price per Night (₹)</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</span>
+                    <Input
+                      id="price"
+                      type="number"
+                      value={newRoom.price}
+                      onChange={(e) =>
+                        setNewRoom({
+                          ...newRoom,
+                          price: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                      className="pl-8"
+                      required
+                    />
+                  </div>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="features">Features</Label>
@@ -609,7 +658,7 @@ const Rooms: React.FC = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsAddDialogOpen(false)}
+                  onClick={() => setIsManualAddOpen(false)}
                 >
                   Cancel
                 </Button>
