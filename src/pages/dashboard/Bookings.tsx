@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Edit, Trash2, Calendar as CalendarIcon, List, Users, FileText, Hotel, Grid, Info, RefreshCw, ExternalLink } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar as CalendarIcon, List, Users, FileText, Hotel, Grid, Info, RefreshCw, ExternalLink, MessageSquare } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useToast } from "@/components/ui/use-toast";
 import { Switch } from "@/components/ui/switch";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, LineChart, Line, Legend } from 'recharts';
 
 interface Booking {
   id: string;
@@ -73,6 +74,7 @@ const Bookings: React.FC = () => {
   ]);
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isManualBookingOpen, setIsManualBookingOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [newBooking, setNewBooking] = useState<Partial<Booking>>({
@@ -129,6 +131,39 @@ const Bookings: React.FC = () => {
     notes: "",
     price: undefined,
   });
+
+  // Booking trends data
+  const bookingTrendsData = {
+    monthly: [
+      { name: 'Jan', bookings: 45, occupancy: 75 },
+      { name: 'Feb', bookings: 52, occupancy: 82 },
+      { name: 'Mar', bookings: 48, occupancy: 78 },
+      { name: 'Apr', bookings: 55, occupancy: 85 },
+      { name: 'May', bookings: 60, occupancy: 88 },
+      { name: 'Jun', bookings: 65, occupancy: 92 },
+      { name: 'Jul', bookings: 70, occupancy: 95 },
+      { name: 'Aug', bookings: 68, occupancy: 93 },
+      { name: 'Sep', bookings: 62, occupancy: 90 },
+      { name: 'Oct', bookings: 58, occupancy: 87 },
+      { name: 'Nov', bookings: 65, occupancy: 91 },
+      { name: 'Dec', bookings: 75, occupancy: 98 },
+    ],
+    yearly: [
+      { name: '2020', bookings: 580, occupancy: 75 },
+      { name: '2021', bookings: 620, occupancy: 78 },
+      { name: '2022', bookings: 680, occupancy: 82 },
+      { name: '2023', bookings: 720, occupancy: 85 },
+      { name: '2024', bookings: 750, occupancy: 88 },
+    ],
+    festivals: [
+      { name: 'New Year', bookings: 95, occupancy: 100 },
+      { name: 'Valentine\'s', bookings: 85, occupancy: 95 },
+      { name: 'Holi', bookings: 90, occupancy: 98 },
+      { name: 'Easter', bookings: 80, occupancy: 92 },
+      { name: 'Diwali', bookings: 92, occupancy: 99 },
+      { name: 'Christmas', bookings: 88, occupancy: 96 },
+    ],
+  };
 
   const handleAddBooking = () => {
     if (newBooking.guestName && newBooking.roomNumber) {
@@ -515,73 +550,49 @@ const Bookings: React.FC = () => {
                   Add Booking
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                   <DialogTitle>Add New Booking</DialogTitle>
                   <DialogDescription>
-                    Enter the guest information and booking details below.
+                    Choose how you want to add a new booking
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="guest-name" className="text-right">Guest Name</Label>
-                    <Input
-                      id="guest-name"
-                      value={newBooking.guestName}
-                      onChange={(e) => setNewBooking({ ...newBooking, guestName: e.target.value })}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="room-number" className="text-right">Room Number</Label>
-                    <Input
-                      id="room-number"
-                      value={newBooking.roomNumber}
-                      onChange={(e) => setNewBooking({ ...newBooking, roomNumber: e.target.value })}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="check-in" className="text-right">Check-in Date</Label>
-                    <div className="col-span-3">
-                      <Calendar
-                        mode="single"
-                        selected={newBooking.checkIn}
-                        onSelect={(date) => setNewBooking({ ...newBooking, checkIn: date || new Date() })}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="check-out" className="text-right">Check-out Date</Label>
-                    <div className="col-span-3">
-                      <Calendar
-                        mode="single"
-                        selected={newBooking.checkOut}
-                        onSelect={(date) => setNewBooking({ ...newBooking, checkOut: date || new Date() })}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="status" className="text-right">Status</Label>
-                    <Select
-                      value={newBooking.status}
-                      onValueChange={(value) => setNewBooking({ ...newBooking, status: value as "confirmed" | "pending" | "cancelled" })}
+                  <div className="grid grid-cols-2 gap-4">
+                    <Button
+                      variant="outline"
+                      className="h-32 flex flex-col items-center justify-center gap-2"
+                      onClick={() => {
+                        setIsAddDialogOpen(false);
+                        // TODO: Implement AI prompt dialog
+                        toast({
+                          title: "Coming Soon",
+                          description: "AI-powered booking assistant will be available soon!",
+                        });
+                      }}
                     >
-                      <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="confirmed">Confirmed</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      <MessageSquare className="h-8 w-8" />
+                      <span className="font-medium">Add by Prompt</span>
+                      <span className="text-sm text-muted-foreground text-center">
+                        Use AI to help you create a booking
+                      </span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-32 flex flex-col items-center justify-center gap-2"
+                      onClick={() => {
+                        setIsAddDialogOpen(false);
+                        setIsManualBookingOpen(true);
+                      }}
+                    >
+                      <Edit className="h-8 w-8" />
+                      <span className="font-medium">Add Manually</span>
+                      <span className="text-sm text-muted-foreground text-center">
+                        Fill out the booking form yourself
+                      </span>
+                    </Button>
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-                  <Button onClick={handleAddBooking}>Add Booking</Button>
-                </DialogFooter>
               </DialogContent>
             </Dialog>
           </div>
@@ -857,6 +868,10 @@ const Bookings: React.FC = () => {
                           {room.currentGuest}
                         </div>
                       )}
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Price per night</span>
+                        <span className="font-medium">₹{room.price.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -967,9 +982,149 @@ const Bookings: React.FC = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-[300px] w-full flex items-center justify-center border rounded-md">
-                  <p className="text-subtle">Booking trend charts will be implemented soon</p>
-                </div>
+                <Tabs defaultValue="monthly" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="monthly">Monthly Trends</TabsTrigger>
+                    <TabsTrigger value="yearly">Yearly Trends</TabsTrigger>
+                    <TabsTrigger value="festivals">Festival Trends</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="monthly" className="space-y-4">
+                    <div className="h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={bookingTrendsData.monthly}
+                          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis yAxisId="left" />
+                          <YAxis yAxisId="right" orientation="right" />
+                          <Tooltip />
+                          <Legend />
+                          <Line 
+                            yAxisId="left"
+                            type="monotone" 
+                            dataKey="bookings" 
+                            stroke="#0088FE" 
+                            name="Bookings"
+                            strokeWidth={2}
+                          />
+                          <Line 
+                            yAxisId="right"
+                            type="monotone" 
+                            dataKey="occupancy" 
+                            stroke="#00C49F" 
+                            name="Occupancy %"
+                            strokeWidth={2}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="text-sm font-medium mb-2">Peak Month</h4>
+                        <p className="text-2xl font-bold">December</p>
+                        <p className="text-sm text-muted-foreground">75 bookings, 98% occupancy</p>
+                      </div>
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="text-sm font-medium mb-2">Average Monthly Bookings</h4>
+                        <p className="text-2xl font-bold">60</p>
+                        <p className="text-sm text-muted-foreground">Across all months</p>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="yearly" className="space-y-4">
+                    <div className="h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={bookingTrendsData.yearly}
+                          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis yAxisId="left" />
+                          <YAxis yAxisId="right" orientation="right" />
+                          <Tooltip />
+                          <Legend />
+                          <Bar 
+                            yAxisId="left"
+                            dataKey="bookings" 
+                            fill="#0088FE" 
+                            name="Total Bookings"
+                          />
+                          <Bar 
+                            yAxisId="right"
+                            dataKey="occupancy" 
+                            fill="#00C49F" 
+                            name="Average Occupancy %"
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="text-sm font-medium mb-2">Year-over-Year Growth</h4>
+                        <p className="text-2xl font-bold">+4.2%</p>
+                        <p className="text-sm text-muted-foreground">Compared to last year</p>
+                      </div>
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="text-sm font-medium mb-2">Total Bookings 2024</h4>
+                        <p className="text-2xl font-bold">750</p>
+                        <p className="text-sm text-muted-foreground">Projected bookings</p>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="festivals" className="space-y-4">
+                    <div className="h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart
+                          data={bookingTrendsData.festivals}
+                          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis yAxisId="left" />
+                          <YAxis yAxisId="right" orientation="right" />
+                          <Tooltip />
+                          <Legend />
+                          <Area 
+                            yAxisId="left"
+                            type="monotone" 
+                            dataKey="bookings" 
+                            stroke="#0088FE" 
+                            fill="#0088FE" 
+                            name="Bookings"
+                            fillOpacity={0.3}
+                          />
+                          <Area 
+                            yAxisId="right"
+                            type="monotone" 
+                            dataKey="occupancy" 
+                            stroke="#00C49F" 
+                            fill="#00C49F" 
+                            name="Occupancy %"
+                            fillOpacity={0.3}
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="text-sm font-medium mb-2">Highest Festival Demand</h4>
+                        <p className="text-2xl font-bold">New Year</p>
+                        <p className="text-sm text-muted-foreground">95 bookings, 100% occupancy</p>
+                      </div>
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="text-sm font-medium mb-2">Average Festival Bookings</h4>
+                        <p className="text-2xl font-bold">88</p>
+                        <p className="text-sm text-muted-foreground">Across all festivals</p>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </TabsContent>
@@ -1082,7 +1237,7 @@ const Bookings: React.FC = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="font-medium">Price per night:</span>
-                    <span>₹{selectedRoom.price}</span>
+                    <span>₹{selectedRoom.price.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                   </div>
                   {selectedRoom.currentGuest && (
                     <div className="flex items-center justify-between">
@@ -1235,13 +1390,16 @@ const Bookings: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="room-price" className="text-right">Price per Night</Label>
-                    <Input
-                      id="room-price"
-                      type="number"
-                      value={selectedRoom.price}
-                      onChange={(e) => setSelectedRoom({ ...selectedRoom, price: Number(e.target.value) })}
-                      className="col-span-3"
-                    />
+                    <div className="col-span-3 relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</span>
+                      <Input
+                        id="room-price"
+                        type="number"
+                        value={selectedRoom.price}
+                        onChange={(e) => setSelectedRoom({ ...selectedRoom, price: Number(e.target.value) })}
+                        className="pl-8"
+                      />
+                    </div>
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="room-capacity" className="text-right">Capacity</Label>
@@ -1421,6 +1579,78 @@ const Bookings: React.FC = () => {
               >
                 <span>Make Reservation</span>
               </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Manual Booking Dialog */}
+        <Dialog open={isManualBookingOpen} onOpenChange={setIsManualBookingOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Booking</DialogTitle>
+              <DialogDescription>
+                Enter the guest information and booking details below.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="guest-name" className="text-right">Guest Name</Label>
+                <Input
+                  id="guest-name"
+                  value={newBooking.guestName}
+                  onChange={(e) => setNewBooking({ ...newBooking, guestName: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="room-number" className="text-right">Room Number</Label>
+                <Input
+                  id="room-number"
+                  value={newBooking.roomNumber}
+                  onChange={(e) => setNewBooking({ ...newBooking, roomNumber: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="check-in" className="text-right">Check-in Date</Label>
+                <div className="col-span-3">
+                  <Calendar
+                    mode="single"
+                    selected={newBooking.checkIn}
+                    onSelect={(date) => setNewBooking({ ...newBooking, checkIn: date || new Date() })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="check-out" className="text-right">Check-out Date</Label>
+                <div className="col-span-3">
+                  <Calendar
+                    mode="single"
+                    selected={newBooking.checkOut}
+                    onSelect={(date) => setNewBooking({ ...newBooking, checkOut: date || new Date() })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="status" className="text-right">Status</Label>
+                <Select
+                  value={newBooking.status}
+                  onValueChange={(value) => setNewBooking({ ...newBooking, status: value as "confirmed" | "pending" | "cancelled" })}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="confirmed">Confirmed</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsManualBookingOpen(false)}>Cancel</Button>
+              <Button onClick={handleAddBooking}>Add Booking</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
