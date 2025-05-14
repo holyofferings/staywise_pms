@@ -267,7 +267,7 @@ const Dashboard: React.FC = () => {
           <Card className="card-custom">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div>
-                <CardTitle>Revenue Overview</CardTitle>
+              <CardTitle>Revenue Overview</CardTitle>
                 <CardDescription>Revenue breakdown by category</CardDescription>
               </div>
               <Select 
@@ -391,7 +391,7 @@ const Dashboard: React.FC = () => {
                         <Line type="monotone" dataKey="other" stroke="#FFBB28" name="Other Revenue" />
                       </LineChart>
                     </ResponsiveContainer>
-                  </div>
+              </div>
                 </TabsContent>
               </Tabs>
             </CardContent>
@@ -401,7 +401,7 @@ const Dashboard: React.FC = () => {
           <Card className="card-custom">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div>
-                <CardTitle>Booking Analytics</CardTitle>
+              <CardTitle>Booking Analytics</CardTitle>
                 <CardDescription>Booking trends and distribution</CardDescription>
               </div>
               <Select 
@@ -568,7 +568,7 @@ const Dashboard: React.FC = () => {
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
-                  </div>
+              </div>
                 </TabsContent>
               </Tabs>
             </CardContent>

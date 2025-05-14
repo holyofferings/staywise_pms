@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit, Trash2, Upload, Info, Wand, Loader2, MessageSquare } from "lucide-react";
+import { Plus, Edit, Trash2, Upload, Info, Wand, Loader2, MessageSquare, Users } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
@@ -139,6 +139,7 @@ const Rooms: React.FC = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isRoomDetailsOpen, setIsRoomDetailsOpen] = useState(false);
   const [isManualAddOpen, setIsManualAddOpen] = useState(false);
+  const [isPromptAddOpen, setIsPromptAddOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [newRoom, setNewRoom] = useState<Partial<Room>>({
     number: "",
@@ -305,35 +306,26 @@ const Rooms: React.FC = () => {
 
   // Function to add the parsed rooms to the actual room list
   const handleAddParsedRooms = () => {
-    console.log("handleAddParsedRooms called, parsedRooms:", parsedRooms); // Debug log
-    
-    const newRoomsToAdd = parsedRooms.map(parsedRoom => ({
+    const newRooms = parsedRooms.map(room => ({
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-      number: parsedRoom.room_no.toString(),
-      type: parsedRoom.type,
-      price: parsedRoom.price,
-      availability: parsedRoom.availability.toLowerCase() as "available" | "occupied" | "maintenance" | "cleaning",
+      number: room.room_no.toString(),
+      type: room.type,
+      price: room.price,
+      availability: room.availability as "available" | "occupied" | "maintenance" | "cleaning",
       images: [],
       checkedIn: false,
-      floor: parsedRoom.floor || 1,
-      features: parsedRoom.features || []
+      floor: room.floor || Math.floor(room.room_no / 100),
+      features: room.features || []
     }));
-    
-    console.log("Current rooms:", rooms); // Debug log
-    console.log("New rooms to add:", newRoomsToAdd); // Debug log
-    
-    setRooms([...rooms, ...newRoomsToAdd]);
-    console.log("Updated rooms array after setting:", [...rooms, ...newRoomsToAdd]); // Debug log
-    
-    setIsQuickAddDialogOpen(false);
-    setPromptText("");
+
+    setRooms([...rooms, ...newRooms]);
     setParsedRooms([]);
-    setIsPreviewMode(false);
-    setBulkAddStep("prompt");
+    setPromptText("");
+    setIsPromptAddOpen(false);
     
     toast({
-      title: "Success",
-      description: `Added ${newRoomsToAdd.length} rooms successfully!`,
+      title: "Rooms Added",
+      description: `Successfully added ${newRooms.length} room${newRooms.length > 1 ? 's' : ''}`,
     });
   };
 
@@ -368,19 +360,10 @@ const Rooms: React.FC = () => {
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold">Rooms Management</h1>
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setIsQuickAddDialogOpen(true)}
-              className="whitespace-nowrap"
-            >
-              <Wand className="mr-2 h-4 w-4" /> Quick Add Rooms
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> Add New Room
             </Button>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" /> Add New Room
-                </Button>
-              </DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                   <DialogTitle>Add New Room</DialogTitle>
@@ -389,36 +372,30 @@ const Rooms: React.FC = () => {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <Button
-                      variant="outline"
-                      className="h-32 flex flex-col items-center justify-center gap-2"
-                      onClick={() => {
-                        setIsAddDialogOpen(false);
-                        setIsQuickAddDialogOpen(true);
-                      }}
-                    >
-                      <MessageSquare className="h-8 w-8" />
-                      <span className="font-medium">Add by Prompt</span>
-                      <span className="text-sm text-muted-foreground text-center">
-                        Use AI to help you create rooms
-                      </span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="h-32 flex flex-col items-center justify-center gap-2"
-                      onClick={() => {
-                        setIsAddDialogOpen(false);
-                        setIsManualAddOpen(true);
-                      }}
-                    >
-                      <Edit className="h-8 w-8" />
-                      <span className="font-medium">Add Manually</span>
-                      <span className="text-sm text-muted-foreground text-center">
-                        Fill out the room form yourself
-                      </span>
-                    </Button>
-                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full h-24 flex flex-col items-center justify-center gap-2"
+                    onClick={() => {
+                      setIsAddDialogOpen(false);
+                      setIsPromptAddOpen(true);
+                    }}
+                  >
+                    <Wand className="h-6 w-6" />
+                    <span>Add by Prompt</span>
+                    <span className="text-sm text-muted-foreground">Describe your room in natural language</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full h-24 flex flex-col items-center justify-center gap-2"
+                    onClick={() => {
+                      setIsAddDialogOpen(false);
+                      setIsManualAddOpen(true);
+                    }}
+                  >
+                    <MessageSquare className="h-6 w-6" />
+                    <span>Add Manually</span>
+                    <span className="text-sm text-muted-foreground">Fill in the room details manually</span>
+                  </Button>
                 </div>
               </DialogContent>
             </Dialog>
@@ -467,37 +444,89 @@ const Rooms: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredRooms.map((room) => (
                 <div 
                   key={room.id} 
-                  className={`aspect-square border-2 rounded-lg p-2 flex flex-col items-center justify-center cursor-pointer transition-all hover:shadow-md ${getStatusColor(room.availability)}`}
+                  className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
                   onClick={() => handleViewRoomDetails(room)}
                 >
-                  <div className="text-xl font-bold">{room.number}</div>
-                  <div className={`text-xs ${getStatusTextColor(room.availability)} uppercase font-semibold mt-1`}>
-                    {formatRoomStatus(room.availability)}
+                  <div className="aspect-video w-full bg-slate-100 dark:bg-slate-800 relative">
+                    {/* Room Image */}
+                    <div 
+                      className="w-full h-full bg-center bg-cover" 
+                      style={{ 
+                        backgroundImage: room.images && room.images.length > 0 
+                          ? `url(${room.images[0]})` 
+                          : "url(/images/room-placeholder.jpg)" 
+                      }}
+                    >
+                      {/* Status Badge */}
+                      <div className="absolute top-3 right-3">
+                        <Badge 
+                          className={`px-2 py-1 ${
+                            room.availability === "available" ? "bg-green-100 text-green-800 border-green-300" :
+                            room.availability === "occupied" ? "bg-red-100 text-red-800 border-red-300" :
+                            room.availability === "maintenance" ? "bg-yellow-100 text-yellow-800 border-yellow-300" :
+                            "bg-purple-100 text-purple-800 border-purple-300"
+                          }`}
+                        >
+                          {formatRoomStatus(room.availability)}
+                        </Badge>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-xs mt-1 text-center">
-                    {room.type} (Floor {room.floor})
+                  
+                  <div className="p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="text-lg font-semibold">Room {room.number}</h3>
+                        <p className="text-sm text-muted-foreground capitalize">{room.type}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold">₹{room.price}</p>
+                        <p className="text-xs text-muted-foreground">per night</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 mt-3 text-sm">
+                      <div className="flex items-center">
+                        <Users className="h-4 w-4 mr-1 text-muted-foreground" />
+                        <span>{room.features.includes("king bed") ? 2 : 1} Guests</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Badge variant="outline" className="text-xs">Floor {Math.floor(parseInt(room.number) / 100)}</Badge>
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {room.features.slice(0, 3).map(feature => (
+                        <Badge key={feature} variant="secondary" className="text-xs">
+                          {feature}
+                        </Badge>
+                      ))}
+                      {room.features.length > 3 && (
+                        <Badge variant="secondary" className="text-xs">
+                          +{room.features.length - 3} more
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="w-full mt-4"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewRoomDetails(room);
+                      }}
+                    >
+                      View Details
+                    </Button>
                   </div>
-                  <div className="text-xs mt-1 text-center font-medium">
-                    ${room.price.toFixed(2)}/night
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="mt-2 h-7 px-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedRoom(room);
-                      setIsEditDialogOpen(true);
-                    }}
-                  >
-                    Edit
-                  </Button>
                 </div>
               ))}
+              
               {filteredRooms.length === 0 && (
                 <div className="col-span-full p-6 text-center text-muted-foreground">
                   No rooms found. Try adjusting your search or filters.
@@ -526,145 +555,210 @@ const Rooms: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Manual Add Room Dialog */}
+        {/* Prompt Add Dialog */}
+        <Dialog open={isPromptAddOpen} onOpenChange={setIsPromptAddOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Add Room by Prompt</DialogTitle>
+              <DialogDescription>
+                Describe your room in natural language. For example: "Add a deluxe room on the 2nd floor with a balcony and ocean view"
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="prompt">Room Description</Label>
+                <Textarea
+                  id="prompt"
+                  placeholder="Describe your room..."
+                  value={promptText}
+                  onChange={(e) => setPromptText(e.target.value)}
+                  className="h-32"
+                />
+              </div>
+              {isParsing && (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                  <span className="ml-2">Processing your request...</span>
+                </div>
+              )}
+              {parsedRooms.length > 0 && (
+                <div className="space-y-4">
+                  <h4 className="font-medium">Preview</h4>
+                  <ScrollArea className="h-[300px] rounded-md border p-4">
+                    {parsedRooms.map((room, index) => (
+                      <div key={index} className="mb-4 p-4 border rounded-lg">
+                        <div className="grid gap-2">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label>Room Number</Label>
+                              <Input
+                                value={room.room_no}
+                                onChange={(e) => handleUpdateParsedRoom(index, "room_no", parseInt(e.target.value))}
+                              />
+                            </div>
+                            <div>
+                              <Label>Room Type</Label>
+                              <Input
+                                value={room.type}
+                                onChange={(e) => handleUpdateParsedRoom(index, "type", e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label>Price</Label>
+                              <Input
+                                type="number"
+                                value={room.price}
+                                onChange={(e) => handleUpdateParsedRoom(index, "price", parseFloat(e.target.value))}
+                              />
+                            </div>
+                            <div>
+                              <Label>Floor</Label>
+                              <Input
+                                type="number"
+                                value={room.floor || Math.floor(room.room_no / 100)}
+                                onChange={(e) => handleUpdateParsedRoom(index, "floor", parseInt(e.target.value))}
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <Label>Features</Label>
+                            <div className="grid grid-cols-3 gap-2 mt-2">
+                              {roomFeatures.map((feature) => (
+                                <div key={feature.id} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`${room.room_no}-${feature.id}`}
+                                    checked={room.features?.includes(feature.id)}
+                                    onCheckedChange={(checked) => {
+                                      const newFeatures = checked
+                                        ? [...(room.features || []), feature.id]
+                                        : (room.features || []).filter((f) => f !== feature.id);
+                                      handleUpdateParsedRoom(index, "features", newFeatures);
+                                    }}
+                                  />
+                                  <label
+                                    htmlFor={`${room.room_no}-${feature.id}`}
+                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                  >
+                                    {feature.name}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </ScrollArea>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => {
+                setIsPromptAddOpen(false);
+                handleResetQuickAdd();
+              }}>
+                Cancel
+              </Button>
+              {parsedRooms.length > 0 ? (
+                <Button onClick={handleAddParsedRooms}>
+                  Add {parsedRooms.length} Room{parsedRooms.length > 1 ? 's' : ''}
+                </Button>
+              ) : (
+                <Button onClick={handleQuickAddSubmit} disabled={!promptText || isParsing}>
+                  {isParsing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    'Generate Room'
+                  )}
+                </Button>
+              )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Manual Add Dialog */}
         <Dialog open={isManualAddOpen} onOpenChange={setIsManualAddOpen}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Add New Room</DialogTitle>
               <DialogDescription>
-                Enter the details for the new room.
+                Fill in the details for the new room
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={(e) => { e.preventDefault(); handleAddRoom(); }}>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="room-number">Room Number</Label>
-                    <Input
-                      id="room-number"
-                      value={newRoom.number}
-                      onChange={(e) =>
-                        setNewRoom({ ...newRoom, number: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="floor">Floor</Label>
-                    <Input
-                      id="floor"
-                      type="number"
-                      value={newRoom.floor}
-                      onChange={(e) =>
-                        setNewRoom({
-                          ...newRoom,
-                          floor: parseInt(e.target.value) || 0,
-                        })
-                      }
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="room-type">Room Type</Label>
-                  <Select
-                    value={newRoom.type}
-                    onValueChange={(value) =>
-                      setNewRoom({ ...newRoom, type: value })
-                    }
-                  >
-                    <SelectTrigger id="room-type">
-                      <SelectValue placeholder="Select room type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Standard">Standard</SelectItem>
-                      <SelectItem value="Deluxe">Deluxe</SelectItem>
-                      <SelectItem value="Suite">Suite</SelectItem>
-                      <SelectItem value="Penthouse">Penthouse</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="room-status">Status</Label>
-                  <Select
-                    value={newRoom.availability}
-                    onValueChange={(value) =>
-                      setNewRoom({ ...newRoom, availability: value as "available" | "occupied" | "maintenance" | "cleaning" })
-                    }
-                  >
-                    <SelectTrigger id="room-status">
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="available">Available</SelectItem>
-                      <SelectItem value="occupied">Occupied</SelectItem>
-                      <SelectItem value="maintenance">Maintenance</SelectItem>
-                      <SelectItem value="cleaning">Cleaning</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="price">Price per Night (₹)</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</span>
-                    <Input
-                      id="price"
-                      type="number"
-                      value={newRoom.price}
-                      onChange={(e) =>
-                        setNewRoom({
-                          ...newRoom,
-                          price: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                      className="pl-8"
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="features">Features</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {roomFeatures.map((feature) => (
-                      <div key={feature.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`feature-${feature.id}`}
-                          checked={newRoom.features?.includes(feature.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setNewRoom({
-                                ...newRoom,
-                                features: [...(newRoom.features || []), feature.id],
-                              });
-                            } else {
-                              setNewRoom({
-                                ...newRoom,
-                                features: (newRoom.features || []).filter(
-                                  (id) => id !== feature.id
-                                ),
-                              });
-                            }
-                          }}
-                        />
-                        <Label htmlFor={`feature-${feature.id}`}>
-                          {feature.name}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="room-number" className="text-right">Room Number</Label>
+                <Input
+                  id="room-number"
+                  value={newRoom.number}
+                  onChange={(e) => setNewRoom({ ...newRoom, number: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="room-type" className="text-right">Room Type</Label>
+                <Input
+                  id="room-type"
+                  value={newRoom.type}
+                  onChange={(e) => setNewRoom({ ...newRoom, type: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="room-price" className="text-right">Price</Label>
+                <Input
+                  id="room-price"
+                  type="number"
+                  value={newRoom.price}
+                  onChange={(e) => setNewRoom({ ...newRoom, price: parseFloat(e.target.value) })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="room-floor" className="text-right">Floor</Label>
+                <Input
+                  id="room-floor"
+                  type="number"
+                  value={newRoom.floor}
+                  onChange={(e) => setNewRoom({ ...newRoom, floor: parseInt(e.target.value) })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Features</Label>
+                <div className="col-span-3 grid grid-cols-2 gap-2">
+                  {roomFeatures.map((feature) => (
+                    <div key={feature.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`new-${feature.id}`}
+                        checked={newRoom.features?.includes(feature.id)}
+                        onCheckedChange={(checked) => {
+                          const newFeatures = checked
+                            ? [...(newRoom.features || []), feature.id]
+                            : (newRoom.features || []).filter((f) => f !== feature.id);
+                          setNewRoom({ ...newRoom, features: newFeatures });
+                        }}
+                      />
+                      <label
+                        htmlFor={`new-${feature.id}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        {feature.name}
+                      </label>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsManualAddOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit">Add Room</Button>
-              </DialogFooter>
-            </form>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsManualAddOpen(false)}>Cancel</Button>
+              <Button onClick={handleAddRoom}>Add Room</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 
@@ -925,222 +1019,6 @@ const Rooms: React.FC = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-
-        {/* Quick Add Rooms Dialog */}
-        <Dialog 
-          open={isQuickAddDialogOpen} 
-          onOpenChange={(open) => {
-            if (!open) {
-              handleResetQuickAdd();
-            }
-            setIsQuickAddDialogOpen(open);
-          }}
-        >
-          <DialogContent className="sm:max-w-[800px]">
-            <DialogHeader>
-              <DialogTitle>Quick Add Multiple Rooms</DialogTitle>
-              <DialogDescription>
-                Describe the rooms you want to add in natural language, and we'll parse the information for you.
-              </DialogDescription>
-            </DialogHeader>
-            
-            {bulkAddStep === "prompt" && (
-              <div className="space-y-4 py-4">
-                <Textarea 
-                  placeholder="Example: Add rooms 101-110 as Standard rooms at $99 per night on floor 1"
-                  className="min-h-[120px]"
-                  value={promptText}
-                  onChange={(e) => setPromptText(e.target.value)}
-                />
-                
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium">Example prompts:</h4>
-                  <div className="flex flex-col gap-2">
-                    {examplePrompts.map((prompt, index) => (
-                      <Button 
-                        key={index} 
-                        variant="outline" 
-                        className="justify-start h-auto py-2 px-3 text-left"
-                        onClick={() => setPromptText(prompt)}
-                      >
-                        {prompt}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="border-t pt-4 flex justify-end gap-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setIsQuickAddDialogOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    onClick={handleQuickAddSubmit}
-                    disabled={isParsing || !promptText.trim()}
-                  >
-                    {isParsing ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Parsing...
-                      </>
-                    ) : (
-                      "Parse & Preview"
-                    )}
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {bulkAddStep === "preview" && (
-              <div className="space-y-4 py-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium">Preview Parsed Rooms</h3>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setBulkAddStep("prompt")}
-                  >
-                    Edit Prompt
-                  </Button>
-                </div>
-                
-                <div className="border rounded-md">
-                  <ScrollArea className="h-[300px]">
-                    <div className="p-4">
-                      {parsedRooms.length > 0 ? (
-                        <table className="w-full">
-                          <thead>
-                            <tr className="border-b">
-                              <th className="text-left p-2">Room No</th>
-                              <th className="text-left p-2">Type</th>
-                              <th className="text-left p-2">Price</th>
-                              <th className="text-left p-2">Status</th>
-                              <th className="text-left p-2">Floor</th>
-                              <th className="text-left p-2">Features</th>
-                              <th className="text-left p-2">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {parsedRooms.map((room, index) => (
-                              <tr key={index} className="border-b">
-                                <td className="p-2">
-                                  <Input 
-                                    value={room.room_no} 
-                                    onChange={(e) => handleUpdateParsedRoom(index, 'room_no', parseInt(e.target.value))}
-                                    className="h-8"
-                                  />
-                                </td>
-                                <td className="p-2">
-                                  <Select
-                                    value={room.type}
-                                    onValueChange={(value) => handleUpdateParsedRoom(index, 'type', value)}
-                                  >
-                                    <SelectTrigger className="h-8">
-                                      <SelectValue placeholder="Type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="Standard">Standard</SelectItem>
-                                      <SelectItem value="Deluxe">Deluxe</SelectItem>
-                                      <SelectItem value="Suite">Suite</SelectItem>
-                                      <SelectItem value="Penthouse">Penthouse</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </td>
-                                <td className="p-2">
-                                  <Input 
-                                    type="number" 
-                                    value={room.price} 
-                                    onChange={(e) => handleUpdateParsedRoom(index, 'price', parseFloat(e.target.value))}
-                                    className="h-8"
-                                  />
-                                </td>
-                                <td className="p-2">
-                                  <Select
-                                    value={room.availability}
-                                    onValueChange={(value) => handleUpdateParsedRoom(index, 'availability', value)}
-                                  >
-                                    <SelectTrigger className="h-8">
-                                      <SelectValue placeholder="Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="Available">Available</SelectItem>
-                                      <SelectItem value="Occupied">Occupied</SelectItem>
-                                      <SelectItem value="Maintenance">Maintenance</SelectItem>
-                                      <SelectItem value="Cleaning">Cleaning</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </td>
-                                <td className="p-2">
-                                  <Input 
-                                    type="number" 
-                                    value={room.floor || 1} 
-                                    onChange={(e) => handleUpdateParsedRoom(index, 'floor', parseInt(e.target.value))}
-                                    className="h-8"
-                                  />
-                                </td>
-                                <td className="p-2">
-                                  <div className="flex flex-wrap gap-1">
-                                    {(room.features || []).map((feature, i) => (
-                                      <Badge key={i} variant="outline" className="text-xs">
-                                        {feature}
-                                      </Badge>
-                                    ))}
-                                    {(!room.features || room.features.length === 0) && (
-                                      <span className="text-muted-foreground text-xs">None</span>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="p-2">
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                    className="h-8 p-0 px-2"
-                                    onClick={() => {
-                                      const updatedRooms = [...parsedRooms];
-                                      updatedRooms.splice(index, 1);
-                                      setParsedRooms(updatedRooms);
-                                    }}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      ) : isParsing ? (
-                        <div className="flex items-center justify-center h-[200px]">
-                          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center h-[200px] text-muted-foreground">
-                          No rooms parsed. Please try a different prompt.
-                        </div>
-                      )}
-                    </div>
-                  </ScrollArea>
-                </div>
-
-                <div className="border-t pt-4 flex justify-between">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setIsQuickAddDialogOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    onClick={handleAddParsedRooms}
-                    disabled={parsedRooms.length === 0}
-                  >
-                    Add {parsedRooms.length} Rooms
-                  </Button>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
       </div>
     </DashboardLayout>
   );

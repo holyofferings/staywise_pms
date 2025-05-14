@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Edit, Trash2, Calendar as CalendarIcon, List, Users, FileText, Hotel, Grid, Info, RefreshCw, ExternalLink, MessageSquare } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar as CalendarIcon, List, Users, FileText, Hotel, Grid, Info, RefreshCw, ExternalLink, MessageSquare, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
@@ -14,16 +14,17 @@ import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useToast } from "@/components/ui/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, LineChart, Line, Legend } from 'recharts';
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Booking {
   id: string;
   guestName: string;
+  roomNumber: string;
   checkIn: Date;
   checkOut: Date;
-  roomNumber: string;
   status: "confirmed" | "pending" | "cancelled";
-  notes?: string;
   price?: number;
+  notes?: string;
 }
 
 interface Room {
@@ -42,33 +43,33 @@ const Bookings: React.FC = () => {
     {
       id: "1",
       guestName: "John Smith",
-      checkIn: new Date(2024, 2, 15),
-      checkOut: new Date(2024, 2, 18),
       roomNumber: "101",
+      checkIn: new Date("2024-02-15"),
+      checkOut: new Date("2024-02-18"),
       status: "confirmed",
     },
     {
       id: "2",
       guestName: "Sarah Johnson",
-      checkIn: new Date(2024, 2, 20),
-      checkOut: new Date(2024, 2, 25),
       roomNumber: "205",
+      checkIn: new Date("2024-02-20"),
+      checkOut: new Date("2024-02-25"),
       status: "pending",
     },
     {
       id: "3",
       guestName: "Michael Brown",
-      checkIn: new Date(2024, 2, 17),
-      checkOut: new Date(2024, 2, 19),
       roomNumber: "304",
+      checkIn: new Date("2024-02-17"),
+      checkOut: new Date("2024-02-19"),
       status: "confirmed",
     },
     {
       id: "4",
       guestName: "Emily Wilson",
-      checkIn: new Date(2024, 2, 10),
-      checkOut: new Date(2024, 2, 12),
       roomNumber: "102",
+      checkIn: new Date("2024-02-10"),
+      checkOut: new Date("2024-02-12"),
       status: "cancelled",
     }
   ]);
@@ -79,12 +80,12 @@ const Bookings: React.FC = () => {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [newBooking, setNewBooking] = useState<Partial<Booking>>({
     guestName: "",
-    checkIn: new Date(),
-    checkOut: new Date(),
     roomNumber: "",
-    status: "pending",
+    checkIn: new Date(),
+    checkOut: new Date(new Date().setDate(new Date().getDate() + 1)),
+    status: "pending"
   });
-  const [activeView, setActiveView] = useState<"grid" | "management" | "calendar">("grid");
+  const [activeView, setActiveView] = useState<"grid" | "calendar" | "room-management" | "guest-management" | "booking-management">("grid");
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [isRoomDetailsOpen, setIsRoomDetailsOpen] = useState(false);
   const [isRoomHistoryOpen, setIsRoomHistoryOpen] = useState(false);
@@ -166,28 +167,30 @@ const Bookings: React.FC = () => {
   };
 
   const handleAddBooking = () => {
-    if (newBooking.guestName && newBooking.roomNumber) {
+    if (newBooking.guestName && newBooking.roomNumber && newBooking.checkIn && newBooking.checkOut) {
       const booking: Booking = {
         id: Date.now().toString(),
-        guestName: newBooking.guestName as string,
-        checkIn: newBooking.checkIn as Date,
-        checkOut: newBooking.checkOut as Date,
-        roomNumber: newBooking.roomNumber as string,
+        guestName: newBooking.guestName,
+        roomNumber: newBooking.roomNumber,
+        checkIn: newBooking.checkIn,
+        checkOut: newBooking.checkOut,
         status: newBooking.status as "confirmed" | "pending" | "cancelled",
+        price: newBooking.price,
+        notes: newBooking.notes
       };
       setBookings([...bookings, booking]);
       setNewBooking({
         guestName: "",
-        checkIn: new Date(),
-        checkOut: new Date(),
         roomNumber: "",
-        status: "pending",
+        checkIn: new Date(),
+        checkOut: new Date(new Date().setDate(new Date().getDate() + 1)),
+        status: "pending"
       });
       setIsAddDialogOpen(false);
       
       toast({
         title: "Booking added",
-        description: `${booking.guestName}'s booking has been created.`,
+        description: "New booking has been created successfully.",
       });
     }
   };
@@ -466,10 +469,12 @@ const Bookings: React.FC = () => {
           const newBooking: Booking = {
             id: result.reservation.id,
             guestName: result.reservation.guestName,
-            checkIn: new Date(result.reservation.checkIn),
-            checkOut: new Date(result.reservation.checkOut),
             roomNumber: result.reservation.roomNumber,
+            checkIn: result.reservation.checkIn,
+            checkOut: result.reservation.checkOut,
             status: result.reservation.status as "confirmed" | "pending" | "cancelled",
+            price: result.reservation.price,
+            notes: result.reservation.notes
           };
           
           // Add to local state
@@ -534,374 +539,507 @@ const Bookings: React.FC = () => {
     fetchReservationsData();
   }, []);
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto px-6 space-y-6">
+      <div className="max-w-7xl mx-auto px-6 space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Room Bookings</h1>
             <p className="text-slate-500 dark:text-slate-400">Manage your hotel room bookings and reservations</p>
           </div>
           <div className="flex space-x-2">
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Booking
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Add New Booking</DialogTitle>
-                  <DialogDescription>
-                    Choose how you want to add a new booking
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <Button
-                      variant="outline"
-                      className="h-32 flex flex-col items-center justify-center gap-2"
-                      onClick={() => {
-                        setIsAddDialogOpen(false);
-                        // TODO: Implement AI prompt dialog
-                        toast({
-                          title: "Coming Soon",
-                          description: "AI-powered booking assistant will be available soon!",
-                        });
-                      }}
-                    >
-                      <MessageSquare className="h-8 w-8" />
-                      <span className="font-medium">Add by Prompt</span>
-                      <span className="text-sm text-muted-foreground text-center">
-                        Use AI to help you create a booking
-                      </span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="h-32 flex flex-col items-center justify-center gap-2"
-                      onClick={() => {
-                        setIsAddDialogOpen(false);
-                        setIsManualBookingOpen(true);
-                      }}
-                    >
-                      <Edit className="h-8 w-8" />
-                      <span className="font-medium">Add Manually</span>
-                      <span className="text-sm text-muted-foreground text-center">
-                        Fill out the booking form yourself
-                      </span>
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <Button onClick={() => setIsManualBookingOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> Add New Booking
+            </Button>
           </div>
         </div>
 
-        <Tabs defaultValue="grid" className="mb-6" onValueChange={(value) => {
-          if (value === "grid" || value === "calendar" || value === "management") {
-            setActiveView(value);
-          }
-        }}>
-          <TabsList className="grid w-full grid-cols-3 max-w-[600px]">
-            <TabsTrigger value="grid">
-              <Grid className="mr-2 h-4 w-4" />
-              Room Grid
-            </TabsTrigger>
-            <TabsTrigger value="calendar">
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              Calendar View
-            </TabsTrigger>
-            <TabsTrigger value="management">
-              <Hotel className="mr-2 h-4 w-4" />
-              Management
-            </TabsTrigger>
-          </TabsList>
-        
-          <TabsContent value="calendar" className="mt-6">
-            <Card className="w-full">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <CalendarIcon className="mr-2 h-5 w-5" />
-                    Booking Calendar
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Switch id="google-calendar" />
-                    <Label htmlFor="google-calendar">Sync with Google Calendar</Label>
-                  </div>
-                </CardTitle>
-                <CardDescription>
-                  View all bookings on a calendar and sync with Google Calendar
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                  <div className="lg:col-span-3">
-                    <div className="flex flex-col items-center">
-                      <Calendar
-                        mode="multiple"
-                        selected={bookings.map(booking => booking.checkIn)}
-                        className="w-full max-w-3xl mx-auto rounded-md border p-6 shadow-md"
-                        classNames={{
-                          day_selected: "bg-primary text-primary-foreground",
-                          day_today: "bg-accent text-accent-foreground",
-                          day: "h-12 w-12 text-base",
-                          head_cell: "text-muted-foreground font-medium",
-                          cell: "text-center text-sm p-0",
-                          row: "flex w-full",
-                          month: "space-y-6"
-                        }}
-                      />
-                      <Button className="mt-4" variant="outline" size="sm" onClick={handleRefreshCalendar} disabled={!isGoogleConnected}>
-                        <RefreshCw className="mr-2 h-4 w-4" />
-                        Refresh Calendar
-                      </Button>
+        <div className="flex justify-center mb-2">
+          <Tabs defaultValue="grid" className="w-full" onValueChange={(value) => {
+            if (value === "grid" || value === "calendar" || value === "room-management" || 
+                value === "guest-management" || value === "booking-management") {
+              setActiveView(value as "grid" | "calendar" | "room-management" | "guest-management" | "booking-management");
+            }
+          }}>
+            <div className="overflow-x-auto pb-2">
+              <TabsList className="w-full grid-cols-5 inline-flex min-w-[600px] max-w-[1200px] mx-auto mb-2">
+                <TabsTrigger value="grid" className="flex-1 px-2 md:px-3">
+                  <Grid className="mr-1 md:mr-2 h-4 w-4" />
+                  <span>Room Grid</span>
+                </TabsTrigger>
+                <TabsTrigger value="calendar" className="flex-1 px-2 md:px-3">
+                  <CalendarIcon className="mr-1 md:mr-2 h-4 w-4" />
+                  <span>Calendar</span>
+                </TabsTrigger>
+                <TabsTrigger value="room-management" className="flex-1 px-2 md:px-3">
+                  <Hotel className="mr-1 md:mr-2 h-4 w-4" />
+                  <span>Room Management</span>
+                </TabsTrigger>
+                <TabsTrigger value="guest-management" className="flex-1 px-2 md:px-3">
+                  <Users className="mr-1 md:mr-2 h-4 w-4" />
+                  <span>Guest Management</span>
+                </TabsTrigger>
+                <TabsTrigger value="booking-management" className="flex-1 px-2 md:px-3">
+                  <FileText className="mr-1 md:mr-2 h-4 w-4" />
+                  <span>Booking Management</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
+            
+            <TabsContent value="calendar" className="mt-6">
+              <Card className="w-full">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <CalendarIcon className="mr-2 h-5 w-5" />
+                      Booking Calendar
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch id="google-calendar" />
+                      <Label htmlFor="google-calendar">Sync with Google Calendar</Label>
+                    </div>
+                  </CardTitle>
+                  <CardDescription>
+                    View all bookings on a calendar and sync with Google Calendar
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <div className="lg:col-span-3">
+                      <div className="flex flex-col items-center">
+                        <Calendar
+                          mode="multiple"
+                          selected={bookings.map(booking => booking.checkIn)}
+                          className="w-full max-w-3xl mx-auto rounded-md border p-6 shadow-md"
+                          classNames={{
+                            day_selected: "bg-primary text-primary-foreground",
+                            day_today: "bg-accent text-accent-foreground",
+                            day: "h-12 w-12 text-base",
+                            head_cell: "text-muted-foreground font-medium",
+                            cell: "text-center text-sm p-0",
+                            row: "flex w-full",
+                            month: "space-y-6"
+                          }}
+                        />
+                        <Button className="mt-4" variant="outline" size="sm" onClick={handleRefreshCalendar} disabled={!isGoogleConnected}>
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                          Refresh Calendar
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="lg:col-span-1">
+                      <Card className="h-full">
+                        <CardHeader>
+                          <CardTitle className="text-base">Google Calendar</CardTitle>
+                          <CardDescription>
+                            Sync your bookings with Google Calendar
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="space-y-2">
+                            <p className="text-sm">Status: 
+                              <span className={`font-medium ${isGoogleConnected ? "text-green-500" : "text-yellow-500"}`}>
+                                {isGoogleConnected ? " Connected" : " Not Connected"}
+                              </span>
+                            </p>
+                            <p className="text-sm text-subtle">
+                              {isGoogleConnected 
+                                ? `Connected as ${googleEmail}` 
+                                : "Connect your Google account to automatically sync bookings"}
+                            </p>
+                          </div>
+                          
+                          <Dialog open={isConnectDialogOpen} onOpenChange={setIsConnectDialogOpen}>
+                            <DialogTrigger asChild>
+                              <Button className="w-full" size="sm">
+                                {isGoogleConnected ? "Manage Connection" : "Connect Google Calendar"}
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>{isGoogleConnected ? "Google Calendar Connection" : "Connect to Google Calendar"}</DialogTitle>
+                                <DialogDescription>
+                                  {isGoogleConnected 
+                                    ? "Manage your Google Calendar connection" 
+                                    : "Enter your Google account credentials to connect"}
+                                </DialogDescription>
+                              </DialogHeader>
+                              
+                              {isGoogleConnected ? (
+                                <div className="space-y-4 py-4">
+                                  <div className="bg-muted p-3 rounded-md">
+                                    <p className="text-sm font-medium">Connected Account</p>
+                                    <p className="text-sm">{googleEmail}</p>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">
+                                    Disconnecting will stop all synchronization with Google Calendar
+                                  </p>
+                                  <Button 
+                                    variant="destructive" 
+                                    className="w-full" 
+                                    onClick={handleDisconnect}
+                                  >
+                                    Disconnect
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="space-y-4 py-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="google-email">Google Email</Label>
+                                    <Input 
+                                      id="google-email" 
+                                      value={googleEmail} 
+                                      onChange={(e) => setGoogleEmail(e.target.value)} 
+                                      placeholder="your.email@gmail.com"
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="google-password">Password</Label>
+                                    <Input 
+                                      id="google-password" 
+                                      type="password" 
+                                      value={googlePassword} 
+                                      onChange={(e) => setGooglePassword(e.target.value)} 
+                                      placeholder="Enter your password"
+                                    />
+                                  </div>
+                                  <p className="text-xs text-muted-foreground">
+                                    Note: In a production app, you would use OAuth instead of password authentication
+                                  </p>
+                                </div>
+                              )}
+                              
+                              <DialogFooter>
+                                {!isGoogleConnected && (
+                                  <>
+                                    <Button variant="outline" onClick={() => setIsConnectDialogOpen(false)}>Cancel</Button>
+                                    <Button 
+                                      onClick={handleGoogleConnect} 
+                                      disabled={isConnecting}
+                                    >
+                                      {isConnecting ? "Connecting..." : "Connect"}
+                                    </Button>
+                                  </>
+                                )}
+                                {isGoogleConnected && (
+                                  <Button 
+                                    variant="outline" 
+                                    onClick={() => setIsConnectDialogOpen(false)}
+                                  >
+                                    Close
+                                  </Button>
+                                )}
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                          
+                          <div className="space-y-2 pt-4 border-t">
+                            <h4 className="text-sm font-medium">Sync Options</h4>
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="auto-sync" className="text-sm">Auto-sync new bookings</Label>
+                              <Switch 
+                                id="auto-sync" 
+                                disabled={!isGoogleConnected}
+                                checked={isAutoSync}
+                                onCheckedChange={setIsAutoSync}
+                              />
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="sync-status" className="text-sm">Sync status changes</Label>
+                              <Switch 
+                                id="sync-status" 
+                                disabled={!isGoogleConnected}
+                                checked={isSyncStatus}
+                                onCheckedChange={setIsSyncStatus}
+                              />
+                            </div>
+                          </div>
+                          
+                          {isGoogleConnected && (
+                            <a 
+                              href="https://calendar.google.com" 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="text-xs flex items-center justify-center text-primary mt-4"
+                            >
+                              <ExternalLink className="h-3 w-3 mr-1" />
+                              Open in Google Calendar
+                            </a>
+                          )}
+                        </CardContent>
+                      </Card>
                     </div>
                   </div>
                   
-                  <div className="lg:col-span-1">
-                    <Card className="h-full">
-                      <CardHeader>
-                        <CardTitle className="text-base">Google Calendar</CardTitle>
-                        <CardDescription>
-                          Sync your bookings with Google Calendar
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                          <p className="text-sm">Status: 
-                            <span className={`font-medium ${isGoogleConnected ? "text-green-500" : "text-yellow-500"}`}>
-                              {isGoogleConnected ? " Connected" : " Not Connected"}
-                            </span>
-                          </p>
-                          <p className="text-sm text-subtle">
-                            {isGoogleConnected 
-                              ? `Connected as ${googleEmail}` 
-                              : "Connect your Google account to automatically sync bookings"}
-                          </p>
-                        </div>
-                        
-                        <Dialog open={isConnectDialogOpen} onOpenChange={setIsConnectDialogOpen}>
-                          <DialogTrigger asChild>
-                            <Button className="w-full" size="sm">
-                              {isGoogleConnected ? "Manage Connection" : "Connect Google Calendar"}
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>{isGoogleConnected ? "Google Calendar Connection" : "Connect to Google Calendar"}</DialogTitle>
-                              <DialogDescription>
-                                {isGoogleConnected 
-                                  ? "Manage your Google Calendar connection" 
-                                  : "Enter your Google account credentials to connect"}
-                              </DialogDescription>
-                            </DialogHeader>
-                            
-                            {isGoogleConnected ? (
-                              <div className="space-y-4 py-4">
-                                <div className="bg-muted p-3 rounded-md">
-                                  <p className="text-sm font-medium">Connected Account</p>
-                                  <p className="text-sm">{googleEmail}</p>
-                                </div>
-                                <p className="text-sm text-muted-foreground">
-                                  Disconnecting will stop all synchronization with Google Calendar
-                                </p>
-                                <Button 
-                                  variant="destructive" 
-                                  className="w-full" 
-                                  onClick={handleDisconnect}
-                                >
-                                  Disconnect
-                                </Button>
-                              </div>
-                            ) : (
-                              <div className="space-y-4 py-4">
-                                <div className="space-y-2">
-                                  <Label htmlFor="google-email">Google Email</Label>
-                                  <Input 
-                                    id="google-email" 
-                                    value={googleEmail} 
-                                    onChange={(e) => setGoogleEmail(e.target.value)} 
-                                    placeholder="your.email@gmail.com"
-                                  />
-                                </div>
-                                <div className="space-y-2">
-                                  <Label htmlFor="google-password">Password</Label>
-                                  <Input 
-                                    id="google-password" 
-                                    type="password" 
-                                    value={googlePassword} 
-                                    onChange={(e) => setGooglePassword(e.target.value)} 
-                                    placeholder="Enter your password"
-                                  />
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                  Note: In a production app, you would use OAuth instead of password authentication
-                                </p>
-                              </div>
-                            )}
-                            
-                            <DialogFooter>
-                              {!isGoogleConnected && (
-                                <>
-                                  <Button variant="outline" onClick={() => setIsConnectDialogOpen(false)}>Cancel</Button>
-                                  <Button 
-                                    onClick={handleGoogleConnect} 
-                                    disabled={isConnecting}
-                                  >
-                                    {isConnecting ? "Connecting..." : "Connect"}
-                                  </Button>
-                                </>
-                              )}
-                              {isGoogleConnected && (
-                                <Button 
-                                  variant="outline" 
-                                  onClick={() => setIsConnectDialogOpen(false)}
-                                >
-                                  Close
-                                </Button>
-                              )}
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
-                        
-                        <div className="space-y-2 pt-4 border-t">
-                          <h4 className="text-sm font-medium">Sync Options</h4>
-                          <div className="flex items-center justify-between">
-                            <Label htmlFor="auto-sync" className="text-sm">Auto-sync new bookings</Label>
-                            <Switch 
-                              id="auto-sync" 
-                              disabled={!isGoogleConnected}
-                              checked={isAutoSync}
-                              onCheckedChange={setIsAutoSync}
-                            />
+                  <div className="mt-8 grid gap-3">
+                    <h3 className="font-medium text-lg">Today's Check-ins</h3>
+                    {bookings.filter(booking => 
+                      booking.checkIn.toDateString() === new Date().toDateString()
+                    ).length > 0 ? (
+                      bookings.filter(booking => 
+                        booking.checkIn.toDateString() === new Date().toDateString()
+                      ).map(booking => (
+                        <div key={booking.id} className="p-3 border rounded-md flex justify-between items-center">
+                          <div>
+                            <p className="font-medium">{booking.guestName}</p>
+                            <p className="text-sm text-subtle">Room {booking.roomNumber}</p>
                           </div>
-                          <div className="flex items-center justify-between">
-                            <Label htmlFor="sync-status" className="text-sm">Sync status changes</Label>
-                            <Switch 
-                              id="sync-status" 
-                              disabled={!isGoogleConnected}
-                              checked={isSyncStatus}
-                              onCheckedChange={setIsSyncStatus}
-                            />
-                          </div>
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            booking.status === "confirmed" ? "bg-green-500/20 text-green-500" :
+                            booking.status === "pending" ? "bg-yellow-500/20 text-yellow-500" :
+                            "bg-red-500/20 text-red-500"
+                          }`}>
+                            {booking.status}
+                          </span>
                         </div>
-                        
-                        {isGoogleConnected && (
-                          <a 
-                            href="https://calendar.google.com" 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="text-xs flex items-center justify-center text-primary mt-4"
-                          >
-                            <ExternalLink className="h-3 w-3 mr-1" />
-                            Open in Google Calendar
-                          </a>
+                      ))
+                    ) : (
+                      <p className="text-subtle">No check-ins scheduled for today</p>
+                    )}
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-between text-sm text-muted-foreground">
+                  <p>Last synced: {lastSyncTime || "Never"}</p>
+                  <Button variant="link" size="sm" className="p-0" disabled={!isGoogleConnected}>
+                    View Sync History
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="grid" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Room Status Grid</CardTitle>
+                  <CardDescription>
+                    View all rooms and their current status
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    {rooms.map((room) => (
+                      <div 
+                        key={room.id} 
+                        className={`aspect-square border-2 rounded-lg p-2 flex flex-col items-center justify-center cursor-pointer transition-all hover:shadow-md ${getRoomStatusColor(room.status)}`}
+                        onClick={() => handleViewRoom(room)}
+                      >
+                        <div className="text-xl font-bold">{room.number}</div>
+                        <div className={`text-xs ${getRoomStatusText(room.status)} uppercase font-semibold mt-1`}>
+                          {room.status}
+                        </div>
+                        <div className="text-xs mt-1 text-center">
+                          {room.type} ({room.capacity} {room.capacity > 1 ? 'persons' : 'person'})
+                        </div>
+                        {room.currentGuest && (
+                          <div className="text-xs mt-1 text-center truncate max-w-full">
+                            {room.currentGuest}
+                          </div>
                         )}
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Price per night</span>
+                          <span className="font-medium">₹{room.price.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="flex justify-between mt-8">
+                    <div className="flex space-x-4">
+                      <div className="flex items-center">
+                        <div className="w-4 h-4 bg-green-500/20 border border-green-500 rounded mr-2"></div>
+                        <span className="text-sm">Available</span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-4 h-4 bg-red-500/20 border border-red-500 rounded mr-2"></div>
+                        <span className="text-sm">Occupied</span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-4 h-4 bg-blue-500/20 border border-blue-500 rounded mr-2"></div>
+                        <span className="text-sm">Reserved</span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-4 h-4 bg-yellow-500/20 border border-yellow-500 rounded mr-2"></div>
+                        <span className="text-sm">Maintenance</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="room-management" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Hotel className="mr-2 h-5 w-5" />
+                    Room Management
+                  </CardTitle>
+                  <CardDescription>
+                    Manage room status, maintenance, and room details
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {/* Room Status Overview */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                      <Card className="col-span-1 md:col-span-2">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Room Status Overview</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <p className="text-sm text-muted-foreground">Available</p>
+                              <p className="text-2xl font-bold text-green-500">
+                                {rooms.filter(r => r.status === "available").length}
+                              </p>
+                            </div>
+                            <div className="space-y-2">
+                              <p className="text-sm text-muted-foreground">Occupied</p>
+                              <p className="text-2xl font-bold text-red-500">
+                                {rooms.filter(r => r.status === "occupied").length}
+                              </p>
+                            </div>
+                            <div className="space-y-2">
+                              <p className="text-sm text-muted-foreground">Reserved</p>
+                              <p className="text-2xl font-bold text-blue-500">
+                                {rooms.filter(r => r.status === "reserved").length}
+                              </p>
+                            </div>
+                            <div className="space-y-2">
+                              <p className="text-sm text-muted-foreground">Maintenance</p>
+                              <p className="text-2xl font-bold text-yellow-500">
+                                {rooms.filter(r => r.status === "maintenance").length}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-4">
+                            <p className="text-sm font-medium mb-2">Room Type Distribution</p>
+                            <div className="h-4 w-full bg-muted rounded-full overflow-hidden">
+                              <div className="h-full bg-blue-500" style={{ 
+                                width: `${Math.round((rooms.filter(r => r.type === "single").length / rooms.length) * 100)}%`,
+                                float: 'left'
+                              }} />
+                              <div className="h-full bg-indigo-500" style={{ 
+                                width: `${Math.round((rooms.filter(r => r.type === "double").length / rooms.length) * 100)}%`,
+                                float: 'left'
+                              }} />
+                              <div className="h-full bg-purple-500" style={{ 
+                                width: `${Math.round((rooms.filter(r => r.type === "suite").length / rooms.length) * 100)}%`,
+                                float: 'left'
+                              }} />
+                            </div>
+                            <div className="flex justify-between mt-2 text-xs">
+                              <span>Single ({rooms.filter(r => r.type === "single").length})</span>
+                              <span>Double ({rooms.filter(r => r.type === "double").length})</span>
+                              <span>Suite ({rooms.filter(r => r.type === "suite").length})</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="col-span-1 md:col-span-2">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Maintenance & Cleaning</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <ScrollArea className="h-[220px]">
+                            <div className="space-y-3">
+                              {rooms.filter(r => r.status === "maintenance").map(room => (
+                                <div key={room.id} className="p-3 bg-yellow-50 border border-yellow-200 rounded-md flex justify-between items-center">
+                                  <div>
+                                    <span className="font-medium">Room {room.number}</span>
+                                    <p className="text-xs text-muted-foreground">{room.type} room</p>
+                                  </div>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={() => handleToggleMaintenance(room.id)}
+                                  >
+                                    Mark Available
+                                  </Button>
+                                </div>
+                              ))}
+                              
+                              {rooms.filter(r => r.status === "maintenance").length === 0 && (
+                                <div className="text-center py-8 text-muted-foreground">
+                                  <p>No rooms under maintenance</p>
+                                </div>
+                              )}
+                            </div>
+                          </ScrollArea>
+                          
+                          <div className="mt-4 flex justify-end">
+                            <Button variant="outline" size="sm" className="flex items-center">
+                              <Plus className="mr-1 h-3 w-3" />
+                              Schedule Maintenance
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                    
+                    {/* Room List */}
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg">Room List</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="rounded-md border">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Room</TableHead>
+                                <TableHead>Type</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Price</TableHead>
+                                <TableHead>Capacity</TableHead>
+                                <TableHead>Current Guest</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {rooms.map(room => (
+                                <TableRow key={room.id}>
+                                  <TableCell className="font-medium">{room.number}</TableCell>
+                                  <TableCell className="capitalize">{room.type}</TableCell>
+                                  <TableCell>
+                                    <span className={`px-2 py-1 rounded-full text-xs ${
+                                      room.status === "occupied" ? "bg-red-500/20 text-red-500" :
+                                      room.status === "available" ? "bg-green-500/20 text-green-500" :
+                                      room.status === "maintenance" ? "bg-yellow-500/20 text-yellow-500" :
+                                      "bg-blue-500/20 text-blue-500"
+                                    }`}>
+                                      {room.status}
+                                    </span>
+                                  </TableCell>
+                                  <TableCell>₹{room.price}</TableCell>
+                                  <TableCell>{room.capacity}</TableCell>
+                                  <TableCell>{room.currentGuest || "-"}</TableCell>
+                                  <TableCell className="text-right">
+                                    <Button variant="ghost" size="icon" onClick={() => handleViewRoom(room)}>
+                                      <Info className="h-4 w-4" />
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
                       </CardContent>
                     </Card>
                   </div>
-                </div>
-                
-                <div className="mt-8 grid gap-3">
-                  <h3 className="font-medium text-lg">Today's Check-ins</h3>
-                  {bookings.filter(booking => 
-                    booking.checkIn.toDateString() === new Date().toDateString()
-                  ).length > 0 ? (
-                    bookings.filter(booking => 
-                      booking.checkIn.toDateString() === new Date().toDateString()
-                    ).map(booking => (
-                      <div key={booking.id} className="p-3 border rounded-md flex justify-between items-center">
-                        <div>
-                          <p className="font-medium">{booking.guestName}</p>
-                          <p className="text-sm text-subtle">Room {booking.roomNumber}</p>
-                        </div>
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          booking.status === "confirmed" ? "bg-green-500/20 text-green-500" :
-                          booking.status === "pending" ? "bg-yellow-500/20 text-yellow-500" :
-                          "bg-red-500/20 text-red-500"
-                        }`}>
-                          {booking.status}
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-subtle">No check-ins scheduled for today</p>
-                  )}
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-between text-sm text-muted-foreground">
-                <p>Last synced: {lastSyncTime || "Never"}</p>
-                <Button variant="link" size="sm" className="p-0" disabled={!isGoogleConnected}>
-                  View Sync History
-                </Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="grid" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Room Status Grid</CardTitle>
-                <CardDescription>
-                  View all rooms and their current status
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  {rooms.map((room) => (
-                    <div 
-                      key={room.id} 
-                      className={`aspect-square border-2 rounded-lg p-2 flex flex-col items-center justify-center cursor-pointer transition-all hover:shadow-md ${getRoomStatusColor(room.status)}`}
-                      onClick={() => handleViewRoom(room)}
-                    >
-                      <div className="text-xl font-bold">{room.number}</div>
-                      <div className={`text-xs ${getRoomStatusText(room.status)} uppercase font-semibold mt-1`}>
-                        {room.status}
-                      </div>
-                      <div className="text-xs mt-1 text-center">
-                        {room.type} ({room.capacity} {room.capacity > 1 ? 'persons' : 'person'})
-                      </div>
-                      {room.currentGuest && (
-                        <div className="text-xs mt-1 text-center truncate max-w-full">
-                          {room.currentGuest}
-                        </div>
-                      )}
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Price per night</span>
-                        <span className="font-medium">₹{room.price.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="flex justify-between mt-8">
-                  <div className="flex space-x-4">
-                    <div className="flex items-center">
-                      <div className="w-4 h-4 bg-green-500/20 border border-green-500 rounded mr-2"></div>
-                      <span className="text-sm">Available</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-4 h-4 bg-red-500/20 border border-red-500 rounded mr-2"></div>
-                      <span className="text-sm">Occupied</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-4 h-4 bg-blue-500/20 border border-blue-500 rounded mr-2"></div>
-                      <span className="text-sm">Reserved</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-4 h-4 bg-yellow-500/20 border border-yellow-500 rounded mr-2"></div>
-                      <span className="text-sm">Maintenance</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          <TabsContent value="management" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <TabsContent value="guest-management" className="mt-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -909,234 +1047,304 @@ const Bookings: React.FC = () => {
                     Guest Management
                   </CardTitle>
                   <CardDescription>
-                    Manage guest information and profiles
+                    Manage guest information, check-ins, and check-outs
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    <p>Current guests: <span className="font-medium">{bookings.filter(b => b.status === "confirmed").length}</span></p>
-                    <p>Total guests this month: <span className="font-medium">{bookings.length}</span></p>
-                    <div className="h-2 w-full bg-muted rounded-full overflow-hidden mt-4">
-                      <div 
-                        className="h-full bg-primary" 
-                        style={{ 
-                          width: `${Math.round((bookings.filter(b => b.status === "confirmed").length / bookings.length) * 100)}%` 
-                        }}
-                      />
+                  <div className="space-y-6">
+                    {/* Today's Activities */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Today's Check-ins</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <ScrollArea className="h-[200px]">
+                            <div className="space-y-3">
+                              {bookings.filter(booking => 
+                                booking.checkIn.toDateString() === new Date().toDateString() &&
+                                booking.status !== "cancelled"
+                              ).length > 0 ? (
+                                bookings.filter(booking => 
+                                  booking.checkIn.toDateString() === new Date().toDateString() &&
+                                  booking.status !== "cancelled"
+                                ).map(booking => (
+                                  <div key={booking.id} className="p-3 border rounded-md flex justify-between items-center">
+                                    <div>
+                                      <p className="font-medium">{booking.guestName}</p>
+                                      <p className="text-sm text-muted-foreground">Room {booking.roomNumber}</p>
+                                    </div>
+                                    <Button variant="outline" size="sm">Check In</Button>
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="text-center py-8 text-muted-foreground">
+                                  <p>No check-ins scheduled for today</p>
+                                </div>
+                              )}
+                            </div>
+                          </ScrollArea>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Today's Check-outs</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <ScrollArea className="h-[200px]">
+                            <div className="space-y-3">
+                              {bookings.filter(booking => 
+                                booking.checkOut.toDateString() === new Date().toDateString() &&
+                                booking.status === "confirmed"
+                              ).length > 0 ? (
+                                bookings.filter(booking => 
+                                  booking.checkOut.toDateString() === new Date().toDateString() &&
+                                  booking.status === "confirmed"
+                                ).map(booking => (
+                                  <div key={booking.id} className="p-3 border rounded-md flex justify-between items-center">
+                                    <div>
+                                      <p className="font-medium">{booking.guestName}</p>
+                                      <p className="text-sm text-muted-foreground">Room {booking.roomNumber}</p>
+                                    </div>
+                                    <Button variant="outline" size="sm">Check Out</Button>
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="text-center py-8 text-muted-foreground">
+                                  <p>No check-outs scheduled for today</p>
+                                </div>
+                              )}
+                            </div>
+                          </ScrollArea>
+                        </CardContent>
+                      </Card>
                     </div>
+                    
+                    {/* Guest List */}
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <div className="flex justify-between items-center">
+                          <CardTitle className="text-lg">Current Guests</CardTitle>
+                          <Input placeholder="Search guests..." className="max-w-xs" />
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="rounded-md border">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Guest</TableHead>
+                                <TableHead>Room</TableHead>
+                                <TableHead>Check-in</TableHead>
+                                <TableHead>Check-out</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {bookings.filter(b => b.status === "confirmed").map(booking => (
+                                <TableRow key={booking.id}>
+                                  <TableCell className="font-medium">{booking.guestName}</TableCell>
+                                  <TableCell>{booking.roomNumber}</TableCell>
+                                  <TableCell>{format(booking.checkIn, 'dd MMM yyyy')}</TableCell>
+                                  <TableCell>{format(booking.checkOut, 'dd MMM yyyy')}</TableCell>
+                                  <TableCell>
+                                    <span className={`px-2 py-1 rounded-full text-xs ${
+                                      booking.status === "confirmed" ? "bg-green-500/20 text-green-500" :
+                                      booking.status === "pending" ? "bg-yellow-500/20 text-yellow-500" :
+                                      "bg-red-500/20 text-red-500"
+                                    }`}>
+                                      {booking.status}
+                                    </span>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <div className="flex justify-end gap-2">
+                                      <Button variant="ghost" size="icon" onClick={() => {
+                                        setSelectedBooking(booking);
+                                        setIsEditDialogOpen(true);
+                                      }}>
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                      <Button variant="ghost" size="icon" onClick={() => handleDeleteBooking(booking.id)}>
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
-                  <Button variant="outline" className="w-full mt-4">View Guest Records</Button>
                 </CardContent>
               </Card>
+            </TabsContent>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Hotel className="mr-2 h-5 w-5" />
-                    Room Availability
-                  </CardTitle>
-                  <CardDescription>
-                    Check and manage room availability
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <p>Available rooms: <span className="font-medium">12</span></p>
-                    <p>Occupied rooms: <span className="font-medium">8</span></p>
-                    <p>Maintenance: <span className="font-medium">2</span></p>
-                    <div className="h-2 w-full bg-muted rounded-full overflow-hidden mt-4">
-                      <div className="h-full bg-green-500" style={{ width: "60%" }} />
-                    </div>
-                  </div>
-                  <Button variant="outline" className="w-full mt-4">Manage Rooms</Button>
-                </CardContent>
-              </Card>
-
+            <TabsContent value="booking-management" className="mt-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <FileText className="mr-2 h-5 w-5" />
-                    Booking Reports
+                    Booking Management
                   </CardTitle>
                   <CardDescription>
-                    Generate and view booking reports
+                    Manage and track all bookings and reservations
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    <p>Total bookings: <span className="font-medium">{bookings.length}</span></p>
-                    <p>Confirmed: <span className="font-medium text-green-500">{bookings.filter(b => b.status === "confirmed").length}</span></p>
-                    <p>Pending: <span className="font-medium text-yellow-500">{bookings.filter(b => b.status === "pending").length}</span></p>
-                    <p>Cancelled: <span className="font-medium text-red-500">{bookings.filter(b => b.status === "cancelled").length}</span></p>
+                  <div className="space-y-6">
+                    {/* Booking Statistics */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Booking Statistics</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <p className="text-sm text-muted-foreground">Total Bookings</p>
+                              <p className="text-2xl font-bold">{bookings.length}</p>
+                            </div>
+                            <div className="space-y-2">
+                              <p className="text-sm text-muted-foreground">Confirmed</p>
+                              <p className="text-2xl font-bold text-green-500">
+                                {bookings.filter(b => b.status === "confirmed").length}
+                              </p>
+                            </div>
+                            <div className="space-y-2">
+                              <p className="text-sm text-muted-foreground">Pending</p>
+                              <p className="text-2xl font-bold text-yellow-500">
+                                {bookings.filter(b => b.status === "pending").length}
+                              </p>
+                            </div>
+                            <div className="space-y-2">
+                              <p className="text-sm text-muted-foreground">Cancelled</p>
+                              <p className="text-2xl font-bold text-red-500">
+                                {bookings.filter(b => b.status === "cancelled").length}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-4">
+                            <Button variant="outline" className="w-full" onClick={() => setIsManualBookingOpen(true)}>
+                              <Plus className="mr-2 h-4 w-4" /> New Booking
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="col-span-1 md:col-span-2">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Booking Trends</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="h-[180px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart
+                                data={bookingTrendsData.monthly.slice(0, 6)}
+                                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                              >
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" />
+                                <YAxis />
+                                <Tooltip />
+                                <Bar dataKey="bookings" fill="#0088FE" name="Bookings" />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                    
+                    {/* All Bookings */}
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <div className="flex justify-between items-center">
+                          <CardTitle className="text-lg">All Bookings</CardTitle>
+                          <div className="flex gap-2">
+                            <Select defaultValue="all">
+                              <SelectTrigger className="w-[150px]">
+                                <SelectValue placeholder="Filter by status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                <SelectItem value="confirmed">Confirmed</SelectItem>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Input placeholder="Search..." className="max-w-xs" />
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="rounded-md border">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Guest</TableHead>
+                                <TableHead>Room</TableHead>
+                                <TableHead>Check-in</TableHead>
+                                <TableHead>Check-out</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Notes</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {bookings.map(booking => (
+                                <TableRow key={booking.id}>
+                                  <TableCell className="font-medium">{booking.guestName}</TableCell>
+                                  <TableCell>{booking.roomNumber}</TableCell>
+                                  <TableCell>{format(booking.checkIn, 'dd MMM yyyy')}</TableCell>
+                                  <TableCell>{format(booking.checkOut, 'dd MMM yyyy')}</TableCell>
+                                  <TableCell>
+                                    <span className={`px-2 py-1 rounded-full text-xs ${
+                                      booking.status === "confirmed" ? "bg-green-500/20 text-green-500" :
+                                      booking.status === "pending" ? "bg-yellow-500/20 text-yellow-500" :
+                                      "bg-red-500/20 text-red-500"
+                                    }`}>
+                                      {booking.status}
+                                    </span>
+                                  </TableCell>
+                                  <TableCell className="max-w-[150px] truncate">{booking.notes || "-"}</TableCell>
+                                  <TableCell className="text-right">
+                                    <div className="flex justify-end gap-2">
+                                      <Button variant="ghost" size="icon" onClick={() => {
+                                        setSelectedBooking(booking);
+                                        setIsEditDialogOpen(true);
+                                      }}>
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                      <Button variant="ghost" size="icon" onClick={() => handleDeleteBooking(booking.id)}>
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
-                  <Button variant="outline" className="w-full mt-4">Generate Report</Button>
                 </CardContent>
               </Card>
-            </div>
-
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle>Booking Trends</CardTitle>
-                <CardDescription>
-                  View booking trends and occupancy rates
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Tabs defaultValue="monthly" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="monthly">Monthly Trends</TabsTrigger>
-                    <TabsTrigger value="yearly">Yearly Trends</TabsTrigger>
-                    <TabsTrigger value="festivals">Festival Trends</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="monthly" className="space-y-4">
-                    <div className="h-[300px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart
-                          data={bookingTrendsData.monthly}
-                          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" />
-                          <YAxis yAxisId="left" />
-                          <YAxis yAxisId="right" orientation="right" />
-                          <Tooltip />
-                          <Legend />
-                          <Line 
-                            yAxisId="left"
-                            type="monotone" 
-                            dataKey="bookings" 
-                            stroke="#0088FE" 
-                            name="Bookings"
-                            strokeWidth={2}
-                          />
-                          <Line 
-                            yAxisId="right"
-                            type="monotone" 
-                            dataKey="occupancy" 
-                            stroke="#00C49F" 
-                            name="Occupancy %"
-                            strokeWidth={2}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 border rounded-lg">
-                        <h4 className="text-sm font-medium mb-2">Peak Month</h4>
-                        <p className="text-2xl font-bold">December</p>
-                        <p className="text-sm text-muted-foreground">75 bookings, 98% occupancy</p>
-                      </div>
-                      <div className="p-4 border rounded-lg">
-                        <h4 className="text-sm font-medium mb-2">Average Monthly Bookings</h4>
-                        <p className="text-2xl font-bold">60</p>
-                        <p className="text-sm text-muted-foreground">Across all months</p>
-                      </div>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="yearly" className="space-y-4">
-                    <div className="h-[300px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={bookingTrendsData.yearly}
-                          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" />
-                          <YAxis yAxisId="left" />
-                          <YAxis yAxisId="right" orientation="right" />
-                          <Tooltip />
-                          <Legend />
-                          <Bar 
-                            yAxisId="left"
-                            dataKey="bookings" 
-                            fill="#0088FE" 
-                            name="Total Bookings"
-                          />
-                          <Bar 
-                            yAxisId="right"
-                            dataKey="occupancy" 
-                            fill="#00C49F" 
-                            name="Average Occupancy %"
-                          />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 border rounded-lg">
-                        <h4 className="text-sm font-medium mb-2">Year-over-Year Growth</h4>
-                        <p className="text-2xl font-bold">+4.2%</p>
-                        <p className="text-sm text-muted-foreground">Compared to last year</p>
-                      </div>
-                      <div className="p-4 border rounded-lg">
-                        <h4 className="text-sm font-medium mb-2">Total Bookings 2024</h4>
-                        <p className="text-2xl font-bold">750</p>
-                        <p className="text-sm text-muted-foreground">Projected bookings</p>
-                      </div>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="festivals" className="space-y-4">
-                    <div className="h-[300px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart
-                          data={bookingTrendsData.festivals}
-                          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" />
-                          <YAxis yAxisId="left" />
-                          <YAxis yAxisId="right" orientation="right" />
-                          <Tooltip />
-                          <Legend />
-                          <Area 
-                            yAxisId="left"
-                            type="monotone" 
-                            dataKey="bookings" 
-                            stroke="#0088FE" 
-                            fill="#0088FE" 
-                            name="Bookings"
-                            fillOpacity={0.3}
-                          />
-                          <Area 
-                            yAxisId="right"
-                            type="monotone" 
-                            dataKey="occupancy" 
-                            stroke="#00C49F" 
-                            fill="#00C49F" 
-                            name="Occupancy %"
-                            fillOpacity={0.3}
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 border rounded-lg">
-                        <h4 className="text-sm font-medium mb-2">Highest Festival Demand</h4>
-                        <p className="text-2xl font-bold">New Year</p>
-                        <p className="text-sm text-muted-foreground">95 bookings, 100% occupancy</p>
-                      </div>
-                      <div className="p-4 border rounded-lg">
-                        <h4 className="text-sm font-medium mb-2">Average Festival Bookings</h4>
-                        <p className="text-2xl font-bold">88</p>
-                        <p className="text-sm text-muted-foreground">Across all festivals</p>
-                      </div>
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+            </TabsContent>
+          </Tabs>
+        </div>
 
         {/* Edit Booking Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Edit Booking</DialogTitle>
               <DialogDescription>
-                Update booking details
+                Update the booking details
               </DialogDescription>
             </DialogHeader>
             {selectedBooking && (
@@ -1161,23 +1369,23 @@ const Bookings: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="edit-check-in" className="text-right">Check-in Date</Label>
-                  <div className="col-span-3">
-                    <Calendar
-                      mode="single"
-                      selected={selectedBooking.checkIn}
-                      onSelect={(date) => setSelectedBooking({ ...selectedBooking, checkIn: date || new Date() })}
-                    />
-                  </div>
+                  <Input
+                    id="edit-check-in"
+                    type="date"
+                    value={selectedBooking.checkIn.toISOString().split('T')[0]}
+                    onChange={(e) => setSelectedBooking({ ...selectedBooking, checkIn: new Date(e.target.value) })}
+                    className="col-span-3"
+                  />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="edit-check-out" className="text-right">Check-out Date</Label>
-                  <div className="col-span-3">
-                    <Calendar
-                      mode="single"
-                      selected={selectedBooking.checkOut}
-                      onSelect={(date) => setSelectedBooking({ ...selectedBooking, checkOut: date || new Date() })}
-                    />
-                  </div>
+                  <Input
+                    id="edit-check-out"
+                    type="date"
+                    value={selectedBooking.checkOut.toISOString().split('T')[0]}
+                    onChange={(e) => setSelectedBooking({ ...selectedBooking, checkOut: new Date(e.target.value) })}
+                    className="col-span-3"
+                  />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="edit-status" className="text-right">Status</Label>
@@ -1224,7 +1432,7 @@ const Bookings: React.FC = () => {
                       selectedRoom.status === "maintenance" ? "bg-yellow-500/20 text-yellow-500" :
                       "bg-blue-500/20 text-blue-500"
                     }`}>
-                      {selectedRoom.status.toUpperCase()}
+                      {selectedRoom.status}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -1481,15 +1689,14 @@ const Bookings: React.FC = () => {
                   <Input
                     id="check-in"
                     type="date"
-                    value={newReservation.checkIn ? format(newReservation.checkIn as Date, 'yyyy-MM-dd') : ''}
+                    value={newReservation.checkIn ? format(newReservation.checkIn, 'yyyy-MM-dd') : ''}
                     min={format(new Date(), 'yyyy-MM-dd')}
                     onChange={(e) => {
                       const date = e.target.value ? new Date(e.target.value) : new Date();
                       setNewReservation({ 
                         ...newReservation, 
                         checkIn: date,
-                        // Ensure checkout is after checkin
-                        checkOut: date > (newReservation.checkOut as Date) ? 
+                        checkOut: date > newReservation.checkOut ? 
                           new Date(date.getTime() + 86400000) : newReservation.checkOut
                       });
                     }}
@@ -1501,8 +1708,8 @@ const Bookings: React.FC = () => {
                   <Input
                     id="check-out"
                     type="date"
-                    value={newReservation.checkOut ? format(newReservation.checkOut as Date, 'yyyy-MM-dd') : ''}
-                    min={newReservation.checkIn ? format(new Date((newReservation.checkIn as Date).getTime() + 86400000), 'yyyy-MM-dd') : format(new Date(Date.now() + 86400000), 'yyyy-MM-dd')}
+                    value={newReservation.checkOut ? format(newReservation.checkOut, 'yyyy-MM-dd') : ''}
+                    min={newReservation.checkIn ? format(new Date(newReservation.checkIn.getTime() + 86400000), 'yyyy-MM-dd') : format(new Date(Date.now() + 86400000), 'yyyy-MM-dd')}
                     onChange={(e) => {
                       const date = e.target.value ? new Date(e.target.value) : new Date();
                       setNewReservation({ ...newReservation, checkOut: date });
@@ -1635,7 +1842,9 @@ const Bookings: React.FC = () => {
                 <Label htmlFor="status" className="text-right">Status</Label>
                 <Select
                   value={newBooking.status}
-                  onValueChange={(value) => setNewBooking({ ...newBooking, status: value as "confirmed" | "pending" | "cancelled" })}
+                  onValueChange={(value: "confirmed" | "pending" | "cancelled") =>
+                    setNewBooking({ ...newBooking, status: value })
+                  }
                 >
                   <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Select status" />

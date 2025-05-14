@@ -10,7 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { MoreHorizontal, Info } from "lucide-react";
+import { MoreHorizontal, Info, Wand, MessageSquare, Loader2, Plus, Users } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { parseRooms } from "@/lib/roomParserService";
+import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/use-toast";
+import { ParsedRoom } from "@/lib/roomParserService";
 
 type RoomType = "standard" | "deluxe" | "suite";
 type RoomStatus = "available" | "occupied" | "maintenance" | "cleaning";
@@ -23,6 +29,7 @@ interface Room {
   status: RoomStatus;
   pricePerNight: number;
   features: string[];
+  capacity: number;
 }
 
 interface RoomFeature {
@@ -31,6 +38,7 @@ interface RoomFeature {
 }
 
 export default function RoomsManagement() {
+  const { toast } = useToast();
   // Search and filter states
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -45,7 +53,8 @@ export default function RoomsManagement() {
       type: "standard",
       status: "available",
       pricePerNight: 99.99,
-      features: ["wifi", "tv"]
+      features: ["wifi", "tv"],
+      capacity: 2
     },
     {
       id: "2",
@@ -54,7 +63,8 @@ export default function RoomsManagement() {
       type: "deluxe",
       status: "occupied",
       pricePerNight: 149.99,
-      features: ["wifi", "tv", "minibar"]
+      features: ["wifi", "tv", "minibar"],
+      capacity: 4
     },
     {
       id: "3",
@@ -63,7 +73,8 @@ export default function RoomsManagement() {
       type: "suite",
       status: "maintenance",
       pricePerNight: 299.99,
-      features: ["wifi", "tv", "minibar", "jacuzzi"]
+      features: ["wifi", "tv", "minibar", "jacuzzi"],
+      capacity: 6
     },
     {
       id: "4",
@@ -72,7 +83,8 @@ export default function RoomsManagement() {
       type: "standard",
       status: "cleaning",
       pricePerNight: 99.99,
-      features: ["wifi", "tv"]
+      features: ["wifi", "tv"],
+      capacity: 2
     },
     {
       id: "5",
@@ -81,7 +93,8 @@ export default function RoomsManagement() {
       type: "deluxe",
       status: "available",
       pricePerNight: 149.99,
-      features: ["wifi", "tv", "minibar"]
+      features: ["wifi", "tv", "minibar"],
+      capacity: 4
     },
     {
       id: "6",
@@ -90,7 +103,8 @@ export default function RoomsManagement() {
       type: "suite",
       status: "occupied",
       pricePerNight: 299.99,
-      features: ["wifi", "tv", "minibar", "jacuzzi"]
+      features: ["wifi", "tv", "minibar", "jacuzzi"],
+      capacity: 6
     },
     {
       id: "7",
@@ -99,7 +113,8 @@ export default function RoomsManagement() {
       type: "standard",
       status: "available",
       pricePerNight: 99.99,
-      features: ["wifi", "tv"]
+      features: ["wifi", "tv"],
+      capacity: 2
     },
     {
       id: "8",
@@ -108,7 +123,8 @@ export default function RoomsManagement() {
       type: "deluxe",
       status: "maintenance",
       pricePerNight: 149.99,
-      features: ["wifi", "tv", "minibar"]
+      features: ["wifi", "tv", "minibar"],
+      capacity: 4
     }
   ]);
   
@@ -129,6 +145,11 @@ export default function RoomsManagement() {
   const [roomToDelete, setRoomToDelete] = useState<string>("");
   const [isRoomDetailsOpen, setIsRoomDetailsOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const [isPromptAddOpen, setIsPromptAddOpen] = useState(false);
+  const [isManualAddOpen, setIsManualAddOpen] = useState(false);
+  const [promptText, setPromptText] = useState("");
+  const [isParsing, setIsParsing] = useState(false);
+  const [parsedRooms, setParsedRooms] = useState<ParsedRoom[]>([]);
   
   // New and selected room states
   const [newRoom, setNewRoom] = useState<Omit<Room, "id">>({
@@ -137,7 +158,8 @@ export default function RoomsManagement() {
     type: "standard",
     status: "available",
     pricePerNight: 99.99,
-    features: []
+    features: [],
+    capacity: 2
   });
 
   // Filter rooms based on search and filters
@@ -187,6 +209,113 @@ export default function RoomsManagement() {
     }
   };
 
+  // API service functions
+  const parseRoomPrompt = async (prompt: string): Promise<ParsedRoom[]> => {
+    try {
+      // Add timeout to fetch request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const response = await fetch('http://localhost:3001/api/rooms/parse', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
+        signal: controller.signal
+      }).finally(() => clearTimeout(timeoutId));
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorMessage = 'Failed to parse rooms';
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorMessage;
+        } catch (jsonError) {
+          console.error('Error parsing JSON response:', jsonError);
+          errorMessage = errorText || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
+      }
+      
+      const responseText = await response.text();
+      if (!responseText.trim()) {
+        throw new Error('Empty response from server');
+      }
+      
+      try {
+        const data = JSON.parse(responseText);
+        return data.rooms || [];
+      } catch (jsonError) {
+        console.error('Error parsing JSON response:', jsonError, 'Raw response:', responseText);
+        throw new Error('Invalid JSON response from server');
+      }
+    } catch (error: any) {
+      // Improved error handling for network issues
+      if (error.name === 'AbortError') {
+        console.error('Request timed out:', error);
+        throw new Error('Server request timed out. Please try again.');
+      } else if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+        console.error('Network error:', error);
+        throw new Error('Network error: Server may be down or unreachable. Please check your connection and try again.');
+      }
+      
+      console.error('Error parsing rooms:', error);
+      throw error;
+    }
+  };
+  
+  const createRooms = async (roomsData: any[]): Promise<any> => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
+      const response = await fetch('http://localhost:3001/api/rooms/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ rooms: roomsData }),
+        signal: controller.signal
+      }).finally(() => clearTimeout(timeoutId));
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorMessage = 'Failed to create rooms';
+        
+        // Try to parse error as JSON, but handle case where it's not valid JSON
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorMessage;
+        } catch (jsonError) {
+          console.error('Error parsing JSON response:', jsonError);
+          errorMessage = errorText || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
+      }
+      
+      // Handle empty response
+      const responseText = await response.text();
+      if (!responseText.trim()) {
+        throw new Error('Empty response from server');
+      }
+      
+      // Parse JSON with error handling
+      try {
+        return JSON.parse(responseText);
+      } catch (jsonError) {
+        console.error('Error parsing JSON response:', jsonError, 'Raw response:', responseText);
+        throw new Error('Invalid JSON response from server');
+      }
+    } catch (error) {
+      console.error('Error creating rooms:', error);
+      throw error;
+    }
+  };
+
   // Handle functions
   const handleAddRoom = (e: React.FormEvent) => {
     e.preventDefault();
@@ -202,7 +331,8 @@ export default function RoomsManagement() {
       type: "standard",
       status: "available",
       pricePerNight: 99.99,
-      features: []
+      features: [],
+      capacity: 2
     });
   };
 
@@ -241,87 +371,238 @@ export default function RoomsManagement() {
     setIsRoomDetailsOpen(true);
   };
 
+  // Handle functions for prompt-based room addition
+  const handleQuickAddSubmit = async () => {
+    if (!promptText.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter room information text",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsParsing(true);
+    
+    try {
+      // Call the API to parse rooms
+      const parsedRoomsData = await parseRoomPrompt(promptText);
+      setParsedRooms(parsedRoomsData);
+      
+      if (parsedRoomsData.length > 0) {
+        toast({
+          title: "Success",
+          description: `Generated ${parsedRoomsData.length} room${parsedRoomsData.length > 1 ? 's' : ''}`,
+        });
+      } else {
+        toast({
+          title: "Warning",
+          description: "No rooms could be generated from your prompt",
+          variant: "default"
+        });
+      }
+    } catch (error: any) {
+      // Improved error message display
+      let errorMessage = error.message || "Failed to parse room information";
+      
+      // Check for common connection issues
+      if (errorMessage.includes('NetworkError') || errorMessage.includes('Failed to fetch') || 
+          errorMessage.includes('Network error') || errorMessage.includes('ECONNREFUSED')) {
+        errorMessage = "Cannot connect to server. Please ensure the server is running and try again.";
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive"
+      });
+      
+      console.error('Full error details:', error);
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
+  const handleAddParsedRooms = async () => {
+    if (parsedRooms.length === 0) return;
+    
+    try {
+      // Convert parsed rooms to our Room type
+      const newRooms = parsedRooms.map(room => ({
+        id: Math.random().toString(36).substr(2, 9),
+        number: room.room_no.toString(),
+        type: room.type as RoomType,
+        status: "available" as RoomStatus,
+        floor: room.floor || 1,
+        pricePerNight: room.price,
+        features: room.features || [],
+        capacity: room.capacity || 2
+      }));
+
+      // Save rooms to the server
+      try {
+        await createRooms(newRooms);
+        // Add the rooms to the local state
+        setRooms([...rooms, ...newRooms]);
+        
+        // Reset the parsed rooms and prompt
+        setParsedRooms([]);
+        setPromptText("");
+        setIsPromptAddOpen(false);
+        
+        toast({
+          title: "Success",
+          description: `Added ${newRooms.length} new room${newRooms.length > 1 ? 's' : ''}`,
+        });
+      } catch (error: any) {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to create rooms",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error adding parsed rooms:", error);
+      toast({
+        title: "Error",
+        description: "An error occurred while adding rooms",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <DashboardLayout>
-      <div className="max-w-[1200px]">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">Rooms Management</h1>
+      <div className="max-w-[1200px] mx-auto px-4">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold">Room Management</h1>
+            <p className="text-slate-500 dark:text-slate-400">Manage your hotel rooms and their settings</p>
+          </div>
           <Button onClick={() => setIsAddDialogOpen(true)} variant="default">
-            Add New Room
+            <Plus className="mr-2 h-4 w-4" /> Add New Room
           </Button>
         </div>
 
         {/* Search and filters */}
-        <div className="flex gap-2 mb-4">
+        <div className="flex flex-col md:flex-row gap-3 mb-6">
           <Input
             placeholder="Search rooms..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="max-w-sm"
           />
-          <Select defaultValue="all" value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="available">Available</SelectItem>
-              <SelectItem value="occupied">Occupied</SelectItem>
-              <SelectItem value="maintenance">Maintenance</SelectItem>
-              <SelectItem value="cleaning">Cleaning</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select defaultValue="all" value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="standard">Standard</SelectItem>
-              <SelectItem value="deluxe">Deluxe</SelectItem>
-              <SelectItem value="suite">Suite</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2">
+            <Select defaultValue="all" value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="available">Available</SelectItem>
+                <SelectItem value="occupied">Occupied</SelectItem>
+                <SelectItem value="maintenance">Maintenance</SelectItem>
+                <SelectItem value="cleaning">Cleaning</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select defaultValue="all" value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="standard">Standard</SelectItem>
+                <SelectItem value="deluxe">Deluxe</SelectItem>
+                <SelectItem value="suite">Suite</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <Card className="shadow-sm">
-          <CardHeader>
+          <CardHeader className="pb-2">
             <CardTitle>Room Status Grid</CardTitle>
             <CardDescription>
-              View all rooms and their current status
+              View and manage all rooms and their current status
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredRooms.map((room) => (
                 <div 
                   key={room.id} 
-                  className={`aspect-square border-2 rounded-lg p-2 flex flex-col items-center justify-center cursor-pointer transition-all hover:shadow-md ${getStatusColor(room.status)}`}
+                  className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
                   onClick={() => handleViewRoomDetails(room)}
                 >
-                  <div className="text-xl font-bold">{room.number}</div>
-                  <div className={`text-xs ${getStatusTextColor(room.status)} uppercase font-semibold mt-1`}>
-                    {formatRoomStatus(room.status)}
+                  <div className="aspect-video w-full bg-slate-100 dark:bg-slate-800 relative">
+                    {/* Room Image Placeholder */}
+                    <div className="w-full h-full bg-center bg-cover">
+                      {/* Status Badge */}
+                      <div className="absolute top-3 right-3">
+                        <Badge 
+                          className={`px-2 py-1 ${
+                            room.status === "available" ? "bg-green-100 text-green-800 border-green-300" :
+                            room.status === "occupied" ? "bg-red-100 text-red-800 border-red-300" :
+                            room.status === "maintenance" ? "bg-yellow-100 text-yellow-800 border-yellow-300" :
+                            "bg-purple-100 text-purple-800 border-purple-300"
+                          }`}
+                        >
+                          {formatRoomStatus(room.status)}
+                        </Badge>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-xs mt-1 text-center">
-                    {formatRoomType(room.type)} (Floor {room.floor})
+                  
+                  <div className="p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="text-lg font-semibold">Room {room.number}</h3>
+                        <p className="text-sm text-muted-foreground capitalize">{formatRoomType(room.type)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold">₹{room.pricePerNight}</p>
+                        <p className="text-xs text-muted-foreground">per night</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 mt-3 text-sm">
+                      <div className="flex items-center">
+                        <Users className="h-4 w-4 mr-1 text-muted-foreground" />
+                        <span>{room.capacity} Guests</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Badge variant="outline" className="text-xs">Floor {room.floor}</Badge>
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {room.features.slice(0, 3).map(feature => (
+                        <Badge key={feature} variant="secondary" className="text-xs">
+                          {feature}
+                        </Badge>
+                      ))}
+                      {room.features.length > 3 && (
+                        <Badge variant="secondary" className="text-xs">
+                          +{room.features.length - 3} more
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="w-full mt-4"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewRoomDetails(room);
+                      }}
+                    >
+                      View Details
+                    </Button>
                   </div>
-                  <div className="text-xs mt-1 text-center font-medium">
-                    ${room.pricePerNight.toFixed(2)}/night
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="mt-2 h-7 px-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditRoom(room);
-                    }}
-                  >
-                    Edit
-                  </Button>
                 </div>
               ))}
+              
               {filteredRooms.length === 0 && (
                 <div className="col-span-full p-6 text-center text-muted-foreground">
                   No rooms found. Try adjusting your search or filters.
@@ -339,19 +620,178 @@ export default function RoomsManagement() {
                 <span className="text-sm">Occupied</span>
               </div>
               <div className="flex items-center">
-                <div className="w-4 h-4 bg-yellow-500/20 border border-yellow-500 rounded mr-2"></div>
-                <span className="text-sm">Maintenance</span>
+                <div className="w-4 h-4 bg-blue-500/20 border border-blue-500 rounded mr-2"></div>
+                <span className="text-sm">Reserved</span>
               </div>
               <div className="flex items-center">
-                <div className="w-4 h-4 bg-purple-500/20 border border-purple-500 rounded mr-2"></div>
-                <span className="text-sm">Cleaning</span>
+                <div className="w-4 h-4 bg-yellow-500/20 border border-yellow-500 rounded mr-2"></div>
+                <span className="text-sm">Maintenance</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Add Room Dialog */}
+        {/* Options Dialog */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Add New Room</DialogTitle>
+              <DialogDescription>
+                Choose how you want to add a new room
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <Button
+                variant="outline"
+                className="w-full h-24 flex flex-col items-center justify-center gap-2"
+                onClick={() => {
+                  setIsAddDialogOpen(false);
+                  setIsPromptAddOpen(true);
+                }}
+              >
+                <Wand className="h-6 w-6" />
+                <span>Add by Prompt</span>
+                <span className="text-sm text-muted-foreground">Describe your room in natural language</span>
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full h-24 flex flex-col items-center justify-center gap-2"
+                onClick={() => {
+                  setIsAddDialogOpen(false);
+                  setIsManualAddOpen(true);
+                }}
+              >
+                <MessageSquare className="h-6 w-6" />
+                <span>Add Manually</span>
+                <span className="text-sm text-muted-foreground">Fill in the room details manually</span>
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Prompt Add Dialog */}
+        <Dialog open={isPromptAddOpen} onOpenChange={setIsPromptAddOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Add Room by Prompt</DialogTitle>
+              <DialogDescription>
+                Describe your room in natural language. For example: "Add a deluxe room on the 2nd floor with a balcony"
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="prompt">Room Description</Label>
+                <Textarea
+                  id="prompt"
+                  placeholder="Describe your room..."
+                  value={promptText}
+                  onChange={(e) => setPromptText(e.target.value)}
+                  className="h-32"
+                />
+              </div>
+              {isParsing && (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                  <span className="ml-2">Processing your request...</span>
+                </div>
+              )}
+              {parsedRooms.length > 0 && (
+                <div className="space-y-4">
+                  <h4 className="font-medium">Preview</h4>
+                  <ScrollArea className="h-[300px] rounded-md border p-4">
+                    {parsedRooms.map((room, index) => (
+                      <div key={index} className="mb-4 p-4 border rounded-lg">
+                        <div className="grid gap-2">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label>Room Number</Label>
+                              <Input
+                                value={room.room_no}
+                                onChange={(e) => {
+                                  const updated = [...parsedRooms];
+                                  updated[index].room_no = parseInt(e.target.value) || room.room_no;
+                                  setParsedRooms(updated);
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <Label>Room Type</Label>
+                              <Select
+                                value={room.type}
+                                onValueChange={(value) => {
+                                  const updated = [...parsedRooms];
+                                  updated[index].type = value;
+                                  setParsedRooms(updated);
+                                }}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="standard">Standard</SelectItem>
+                                  <SelectItem value="deluxe">Deluxe</SelectItem>
+                                  <SelectItem value="suite">Suite</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label>Price</Label>
+                              <Input
+                                type="number"
+                                value={room.price}
+                                onChange={(e) => {
+                                  const updated = [...parsedRooms];
+                                  updated[index].price = parseFloat(e.target.value) || room.price;
+                                  setParsedRooms(updated);
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <Label>Floor</Label>
+                              <Input
+                                type="number"
+                                value={room.floor}
+                                onChange={(e) => {
+                                  const updated = [...parsedRooms];
+                                  updated[index].floor = parseInt(e.target.value) || room.floor;
+                                  setParsedRooms(updated);
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </ScrollArea>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsPromptAddOpen(false)}>Cancel</Button>
+              {parsedRooms.length > 0 ? (
+                <Button onClick={handleAddParsedRooms}>
+                  Add {parsedRooms.length} Room{parsedRooms.length > 1 ? 's' : ''}
+                </Button>
+              ) : (
+                <Button onClick={handleQuickAddSubmit} disabled={!promptText || isParsing}>
+                  {isParsing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    'Generate Room'
+                  )}
+                </Button>
+              )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Manual Add Dialog */}
+        <Dialog open={isManualAddOpen} onOpenChange={setIsManualAddOpen}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Add New Room</DialogTitle>
@@ -477,152 +917,13 @@ export default function RoomsManagement() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsAddDialogOpen(false)}
+                  onClick={() => setIsManualAddOpen(false)}
                 >
                   Cancel
                 </Button>
                 <Button type="submit">Add Room</Button>
               </DialogFooter>
             </form>
-          </DialogContent>
-        </Dialog>
-
-        {/* Edit Room Dialog */}
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Edit Room</DialogTitle>
-              <DialogDescription>
-                Update the room details.
-              </DialogDescription>
-            </DialogHeader>
-            {selectedRoom && (
-              <form onSubmit={handleUpdateRoom}>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="edit-room-number">Room Number</Label>
-                      <Input
-                        id="edit-room-number"
-                        value={selectedRoom.number}
-                        onChange={(e) =>
-                          setSelectedRoom({ ...selectedRoom, number: e.target.value })
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="edit-floor">Floor</Label>
-                      <Input
-                        id="edit-floor"
-                        type="number"
-                        value={selectedRoom.floor}
-                        onChange={(e) =>
-                          setSelectedRoom({
-                            ...selectedRoom,
-                            floor: parseInt(e.target.value) || 0,
-                          })
-                        }
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="edit-room-type">Room Type</Label>
-                    <Select
-                      value={selectedRoom.type}
-                      onValueChange={(value) =>
-                        setSelectedRoom({ ...selectedRoom, type: value as RoomType })
-                      }
-                    >
-                      <SelectTrigger id="edit-room-type">
-                        <SelectValue placeholder="Select room type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="standard">Standard</SelectItem>
-                        <SelectItem value="deluxe">Deluxe</SelectItem>
-                        <SelectItem value="suite">Suite</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="edit-room-status">Status</Label>
-                    <Select
-                      value={selectedRoom.status}
-                      onValueChange={(value) =>
-                        setSelectedRoom({ ...selectedRoom, status: value as RoomStatus })
-                      }
-                    >
-                      <SelectTrigger id="edit-room-status">
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="available">Available</SelectItem>
-                        <SelectItem value="occupied">Occupied</SelectItem>
-                        <SelectItem value="maintenance">Maintenance</SelectItem>
-                        <SelectItem value="cleaning">Cleaning</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="edit-price">Price per Night ($)</Label>
-                    <Input
-                      id="edit-price"
-                      type="number"
-                      value={selectedRoom.pricePerNight}
-                      onChange={(e) =>
-                        setSelectedRoom({
-                          ...selectedRoom,
-                          pricePerNight: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="edit-features">Features</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {roomFeatures.map((feature) => (
-                        <div key={feature.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`edit-feature-${feature.id}`}
-                            checked={selectedRoom.features.includes(feature.id)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setSelectedRoom({
-                                  ...selectedRoom,
-                                  features: [...selectedRoom.features, feature.id],
-                                });
-                              } else {
-                                setSelectedRoom({
-                                  ...selectedRoom,
-                                  features: selectedRoom.features.filter(
-                                    (id) => id !== feature.id
-                                  ),
-                                });
-                              }
-                            }}
-                          />
-                          <Label htmlFor={`edit-feature-${feature.id}`}>
-                            {feature.name}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsEditDialogOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit">Save Changes</Button>
-                </DialogFooter>
-              </form>
-            )}
           </DialogContent>
         </Dialog>
 
