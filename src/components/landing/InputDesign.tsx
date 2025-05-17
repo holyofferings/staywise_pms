@@ -26,7 +26,7 @@ const InputDesign = () => {
             quote: "My team loves Staywise's reporting system because it's so dynamic. We can splice our data in so many different ways and combinations.",
             authorName: "Ram Kishan",
             authorRole: "Lessor, Paradise Inn (Delhi)",
-            authorImageSrc: "https://cdn.builder.io/api/v1/image/assets/TEMP/94bc8c43a0161e7acfea3f697b09d01abd5eb3fa?placeholderIfAbsent=true&apiKey=602006ab0872494795ebb36066caa256"
+            authorImageSrc: "public/images/Kishan Ji.JPG"
           }}
         />
       </div>
@@ -60,10 +60,10 @@ const InputDesign = () => {
       />
 
       <PricingSection />
-      <SecuritySection />
-      <PoweredBySection />
       <MoreFeaturesSection />
       <TestimonialsGrid />
+      <SecuritySection />
+      <PoweredBySection />
       <CtaSection />
       <Footer />
     </main>

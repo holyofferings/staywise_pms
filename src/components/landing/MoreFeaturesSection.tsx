@@ -4,12 +4,12 @@ import React from "react";
 const MoreFeaturesSection = () => {
   const features = [
     {
-      icon: "https://cdn.builder.io/api/v1/image/assets/TEMP/fd0b7fbf7dc32e17c9fd7af1b2bd18c00c62c9ef?placeholderIfAbsent=true&apiKey=602006ab0872494795ebb36066caa256",
+      icon: "public/images/ai-technology_18830138.png",
       title: "AI-Powered Recommendations",
       description: "Smart suggestions for room pricing and promotions based on market trends and guest history"
     },
     {
-      icon: "https://cdn.builder.io/api/v1/image/assets/TEMP/facc9f0cb7d9b42eed2a1e94cf7e4c123d3c17b5?placeholderIfAbsent=true&apiKey=602006ab0872494795ebb36066caa256",
+      icon: "public/images/sweep_18995967.png",
       title: "Automated Housekeeping",
       description: "Intelligent scheduling and task assignment for cleaning staff with real-time status updates"
     },
@@ -49,7 +49,7 @@ const MoreFeaturesSection = () => {
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-md:max-w-full">
           {features.map((feature, index) => (
-            <div key={index} className="flex flex-col gap-4 p-6 bg-background rounded-3xl shadow-sm max-md:px-5">
+            <div key={index} className="flex flex-col gap-4 p-6 border-2 border-black bg-background rounded-3xl shadow-sm max-md:px-5">
               <div className="flex overflow-hidden justify-center items-start w-12 h-12 rounded-lg bg-primary/10">
                 <img
                   src={feature.icon}

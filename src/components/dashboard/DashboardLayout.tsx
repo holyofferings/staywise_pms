@@ -26,17 +26,17 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   };
 
   return (
-    <div className={`dashboard-layout min-h-screen bg-background text-foreground ${sidebarCollapsed ? 'sidebar-collapsed' : 'sidebar-expanded'}`}>
+    <div className={`dashboard-layout flex h-screen bg-background text-foreground ${sidebarCollapsed ? 'sidebar-collapsed' : 'sidebar-expanded'}`}>
       {/* Sidebar */}
       <Sidebar onToggle={handleSidebarToggle} />
       
       {/* Main content area */}
-      <div className="dashboard-content min-h-screen">
+      <div className="dashboard-content flex flex-col flex-1 h-screen overflow-hidden">
         {/* Top navigation */}
         <Header />
         
-        {/* Page content - added max-w-screen-xl and mx-auto to constrain width */}
-        <main className="p-4 sm:p-6 max-w-screen-xl mx-auto">
+        {/* Page content - removed width constraints and made it fill available space */}
+        <main className="p-4 sm:p-6 flex-1 overflow-auto">
           {children}
         </main>
       </div>

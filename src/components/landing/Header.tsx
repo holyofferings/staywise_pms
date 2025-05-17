@@ -41,11 +41,11 @@ const Header = () => {
                 <div
                   dangerouslySetInnerHTML={{
                     __html:
-                      `<svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" class="header-icon" style="width: 24px; height: 24px; opacity: 0.9; background-color: ${logoBackgroundColor}; border-radius: 4px;"> <g clip-path="url(#clip0_1_365)"> <path d="M7.5 3.98399C7.5 5.92599 5.958 7.49999 4.056 7.49999H0.612V3.98399C0.612 2.04299 2.154 0.468994 4.056 0.468994C5.958 0.468994 7.5 2.04299 7.5 3.98399ZM7.5 11.016C7.5 9.07399 9.042 7.49999 10.944 7.49999H14.388V11.016C14.388 12.957 12.846 14.531 10.944 14.531C9.042 14.531 7.5 12.957 7.5 11.016ZM0.612 11.016C0.612 12.957 2.154 14.531 4.056 14.531H7.5V11.016C7.5 9.07399 5.958 7.49999 4.056 7.49999C2.154 7.49999 0.612 9.07399 0.612 11.016ZM14.388 3.98399C14.388 2.04299 12.846 0.468994 10.944 0.468994H7.5V3.98399C7.5 5.92599 9.042 7.49999 10.944 7.49999C12.846 7.49999 14.388 5.92599 14.388 3.98399Z" fill="currentColor"></path> </g> <defs> <clipPath id="clip0_1_365"> <rect width="15" height="15" fill="white"></rect> </clipPath> </defs> </svg>`,
+                      `<svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" class="header-icon" style="width: 48px; height: 48px; opacity: 0.9; background-color: ${logoBackgroundColor}; border-radius: 4px;"> <g clip-path="url(#clip0_1_365)"> <path d="M7.5 3.98399C7.5 5.92599 5.958 7.49999 4.056 7.49999H0.612V3.98399C0.612 2.04299 2.154 0.468994 4.056 0.468994C5.958 0.468994 7.5 2.04299 7.5 3.98399ZM7.5 11.016C7.5 9.07399 9.042 7.49999 10.944 7.49999H14.388V11.016C14.388 12.957 12.846 14.531 10.944 14.531C9.042 14.531 7.5 12.957 7.5 11.016ZM0.612 11.016C0.612 12.957 2.154 14.531 4.056 14.531H7.5V11.016C7.5 9.07399 5.958 7.49999 4.056 7.49999C2.154 7.49999 0.612 9.07399 0.612 11.016ZM14.388 3.98399C14.388 2.04299 12.846 0.468994 10.944 0.468994H7.5V3.98399C7.5 5.92599 9.042 7.49999 10.944 7.49999C12.846 7.49999 14.388 5.92599 14.388 3.98399Z" fill="currentColor"></path> </g> <defs> <clipPath id="clip0_1_365"> <rect width="15" height="15" fill="white"></rect> </clipPath> </defs> </svg>`,
                   }}
                 />
               </div>
-              <span className="text-foreground text-md font-medium leading-[16.8px]">
+              <span className="text-foreground text-5xl text-bold font-large leading-[20.8px]">
                 Staywise
               </span>
             </div>
@@ -57,7 +57,7 @@ const Header = () => {
                 href="#security" 
                 onClick={(e) => {
                   e.preventDefault();
-                  scrollToSection('security');
+                  scrollToSection('HeroSection');
                 }}
                 className="self-stretch my-auto text-base font-medium tracking-normal text-center text-foreground hover:text-foreground/80 transition-colors"
               >
@@ -74,13 +74,7 @@ const Header = () => {
                 <span className="text-base font-medium tracking-normal text-center text-foreground">
                   Features
                 </span>
-                <span className="flex justify-center items-center pr-1.5 pl-1 w-4 h-4 rounded-2xl bg-foreground min-h-4">
-                  <img
-                    src="https://cdn.builder.io/api/v1/image/assets/TEMP/e5d3761a0a1ef7aa949f608f8d0aac9c86c9cf0b?placeholderIfAbsent=true&apiKey=602006ab0872494795ebb36066caa256"
-                    className="object-contain self-stretch my-auto w-1.5 aspect-[0.75]"
-                    alt="Arrow icon"
-                  />
-                </span>
+                
               </a>
               <a 
                 href="#pricing" 
@@ -93,14 +87,7 @@ const Header = () => {
                 Pricing
               </a>
             </div>
-            <div className="flex gap-5 my-auto text-base font-medium tracking-normal text-center whitespace-nowrap text-foreground">
-              <a href="#" className="grow">
-                Changelog
-              </a>
-              <a href="#" className="basis-auto">
-                Customers
-              </a>
-            </div>
+            
           </div>
 
           <div className="flex gap-3 items-start text-base font-medium tracking-normal">

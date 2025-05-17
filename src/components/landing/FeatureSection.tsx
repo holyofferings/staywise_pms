@@ -28,10 +28,10 @@ const FeatureSection: React.FC<FeatureSectionProps> = ({
   isLastSection = false
 }) => {
   return (
-    <section className="z-10 pt-16 mt-0 w-full bg-background max-md:max-w-full">
+    <section className="z-10 pt-16 mt-0 mb-[-40px] w-full bg-background max-md:max-w-full">
       <div className="flex justify-center items-center pr-36 pl-36 w-full bg-background max-md:px-5 max-md:max-w-full">
-        <div className="flex flex-1 shrink self-stretch my-auto basis-0 max-w-[1155px] min-w-60 w-[1155px] max-md:max-w-full">
-          <div className="flex flex-col items-center self-start mt-32 max-md:hidden max-md:mt-10">
+        <div className="flex flex-1 shrink self-stretch my-auto basis-0 max-w-[1155px] min-w-60 w-[115px] max-md:max-w-full">
+          <div className="flex flex-col items-center self-start mt-1 max-md:hidden max-md:mt-10">
             <div className="flex overflow-hidden justify-center items-start w-[49px]">
               <img
                 src={iconSrc}
@@ -59,8 +59,8 @@ const FeatureSection: React.FC<FeatureSectionProps> = ({
                 <FeatureTabs />
               ) : (
                 <div className="flex flex-wrap gap-6 items-start w-full">
-                  <div className="flex overflow-hidden flex-col flex-1 shrink items-start pt-10 pl-10 bg-background rounded-3xl shadow-sm basis-10 max-w-[684px] min-h-[560px] min-w-60 max-md:max-w-full">
-                    <div className="flex flex-wrap gap-1 text-lg tracking-normal leading-snug">
+                  <div className="flex overflow-hidden flex-col flex-1 shrink items-start pt-10 pl-10 border-2 border-black bg-background rounded-3xl shadow-sm basis-10 max-w-[684px] min-h-[560px] min-w-60 max-md:max-w-full">
+                    <div className="flex flex-wrap gap-1 text-xl tracking-normal leading-snug">
                       <h3 className="flex-auto font-semibold text-foreground">
                         Real-time multiplayer collaboration.
                       </h3>
@@ -99,13 +99,13 @@ const FeatureSection: React.FC<FeatureSectionProps> = ({
                       </div>
                     </div>
                   </div>
-                  <div className="flex overflow-hidden flex-col flex-1 shrink items-center px-10 pt-10 pb-5 max-w-md bg-background rounded-3xl shadow-sm basis-0 min-w-60 max-md:px-5 max-md:max-w-full">
-                    <div className="px-0.5 pb-16 w-full text-lg tracking-normal max-w-[420px]">
-                      <div className="flex z-10 gap-1 leading-snug">
+                  <div className="flex overflow-hidden flex-col flex-1 shrink items-center px-10 pt-10 pb-5 max-w-md bg-background rounded-3xl border-2 border-black shadow-sm basis-0 min-w-60 max-md:px-5 max-md:max-w-full">
+                    <div className="px-0.5 pb-16 w-full text-xl tracking-normal max-w-[420px]">
+                      <div className="flex z-10 leading-snug">
                         <h3 className="grow font-semibold text-foreground">
                           Build from anywhere.
                         </h3>
-                        <p className="grow shrink w-36 font-medium text-foreground/80">
+                        <p className="grow shrink w-28 font-small text-nowrap+gap text-foreground/80">
                           Our world-class apps
                         </p>
                       </div>

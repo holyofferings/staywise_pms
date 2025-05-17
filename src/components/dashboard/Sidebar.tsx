@@ -14,7 +14,13 @@ import {
   Settings, 
   Menu, 
   X,
-  ShoppingCart
+  ShoppingCart,
+  ChevronDown,
+  Building,
+  UserPlus,
+  CalendarDays,
+  UserCog,
+  ClipboardList 
 } from "lucide-react";
 
 interface SidebarLinkProps {
@@ -24,6 +30,11 @@ interface SidebarLinkProps {
   isActive: boolean;
   collapsed: boolean;
   onClick?: () => void;
+  subItems?: {
+    to: string;
+    label: string;
+    icon: React.ReactNode;
+  }[];
 }
 
 interface SidebarProps {
@@ -36,23 +47,81 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
   label, 
   isActive,
   collapsed,
-  onClick 
+  onClick,
+  subItems 
 }) => {
+  const [submenuOpen, setSubmenuOpen] = useState(false);
+  const location = useLocation();
+
+  const toggleSubmenu = (e: React.MouseEvent) => {
+    if (subItems && subItems.length > 0) {
+      e.preventDefault();
+      setSubmenuOpen(!submenuOpen);
+    }
+  };
+
+  const hasActiveChild = subItems?.some(item => location.pathname === item.to);
+
   return (
-    <Link to={to} onClick={onClick}>
-      <Button
-        variant="ghost"
-        className={cn(
-          "w-full justify-start gap-3 px-3",
-          isActive 
-            ? "bg-primary/10 text-primary" 
-            : "text-sidebar-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-        )}
-      >
-        {icon}
-        {!collapsed && <span>{label}</span>}
-      </Button>
-    </Link>
+    <>
+      {subItems && subItems.length > 0 ? (
+        <Button
+          variant="ghost"
+          className={cn(
+            "w-full justify-start gap-3 px-3",
+            (isActive || hasActiveChild)
+              ? "bg-primary/10 text-primary" 
+              : "text-sidebar-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          )}
+          onClick={toggleSubmenu}
+        >
+          {icon}
+          {!collapsed && (
+            <>
+              <span className="flex-1 text-left">{label}</span>
+              <ChevronDown size={16} className={cn("transition-transform", submenuOpen ? "rotate-180" : "")} />
+            </>
+          )}
+        </Button>
+      ) : (
+        <Link to={to} onClick={onClick}>
+          <Button
+            variant="ghost"
+            className={cn(
+              "w-full justify-start gap-3 px-3",
+              isActive 
+                ? "bg-primary/10 text-primary" 
+                : "text-sidebar-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+            )}
+          >
+            {icon}
+            {!collapsed && <span>{label}</span>}
+          </Button>
+        </Link>
+      )}
+
+      {/* Submenu items */}
+      {subItems && subItems.length > 0 && submenuOpen && !collapsed && (
+        <div className="pl-10 space-y-1 mt-1">
+          {subItems.map((item, index) => (
+            <Link to={item.to} key={index} onClick={onClick}>
+              <Button
+                variant="ghost"
+                className={cn(
+                  "w-full justify-start gap-2 px-3 py-1 h-8 text-sm",
+                  location.pathname === item.to 
+                    ? "bg-primary/10 text-primary" 
+                    : "text-sidebar-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                )}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </Button>
+            </Link>
+          ))}
+        </div>
+      )}
+    </>
   );
 };
 
@@ -63,6 +132,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
 
   const links = [
     { to: "/dashboard", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
+    { 
+      to: "/dashboard/front-office", 
+      icon: <Building size={20} />, 
+      label: "Front Office",
+      subItems: [
+        { to: "/dashboard/front-office/reservation", icon: <Calendar size={16} />, label: "Reservation" },
+        { to: "/dashboard/front-office/walk-in", icon: <UserPlus size={16} />, label: "Walk In" },
+        { to: "/dashboard/front-office/events", icon: <CalendarDays size={16} />, label: "Today's Events" },
+        { to: "/dashboard/front-office/guest-services", icon: <UserCog size={16} />, label: "Guest Self Services" },
+        { to: "/dashboard/front-office/guest-profiles", icon: <Users size={16} />, label: "Guest Profiles" },
+        { to: "/dashboard/front-office/reservation-list", icon: <ClipboardList size={16} />, label: "Reservation List" },
+      ]
+    },
     { to: "/dashboard/bookings", icon: <Calendar size={20} />, label: "Bookings" },
     { to: "/dashboard/rooms", icon: <Bed size={20} />, label: "Rooms" },
     { to: "/dashboard/invoices", icon: <FileText className="h-5 w-5" />, label: "Invoice Manager" },
@@ -181,6 +263,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
                     isActive={location.pathname === link.to}
                     collapsed={collapsed}
                     onClick={() => setMobileOpen(false)}
+                    subItems={link.subItems}
                   />
                 </li>
               ))}

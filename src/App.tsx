@@ -20,6 +20,15 @@ import Billing from "./pages/dashboard/Billing";
 import NotFound from "./pages/NotFound";
 import RequireAuth from "./components/auth/RequireAuth";
 
+// Front Office Pages
+import FrontOffice from "./pages/dashboard/front-office/FrontOffice";
+import Reservation from "./pages/dashboard/front-office/Reservation";
+import WalkIn from "./pages/dashboard/front-office/WalkIn";
+import TodaysEvents from "./pages/dashboard/front-office/TodaysEvents";
+import GuestSelfServices from "./pages/dashboard/front-office/GuestSelfServices";
+import GuestProfiles from "./pages/dashboard/front-office/GuestProfiles";
+import ReservationList from "./pages/dashboard/front-office/ReservationList";
+
 const queryClient = new QueryClient();
 
 const App = () => {
@@ -33,8 +42,9 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<LandingPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/signup" element={<SignupPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            
             
             {/* Protected Routes */}
             <Route element={<RequireAuth />}>
@@ -48,6 +58,15 @@ const App = () => {
               <Route path="/dashboard/qr-codes" element={<QrCodeGenerator />} />
               <Route path="/dashboard/invoices" element={<Billing />} />
               <Route path="/dashboard/settings" element={<Settings />} />
+              
+              {/* Front Office Routes */}
+              <Route path="/dashboard/front-office" element={<FrontOffice />} />
+              <Route path="/dashboard/front-office/reservation" element={<Reservation />} />
+              <Route path="/dashboard/front-office/walk-in" element={<WalkIn />} />
+              <Route path="/dashboard/front-office/events" element={<TodaysEvents />} />
+              <Route path="/dashboard/front-office/guest-services" element={<GuestSelfServices />} />
+              <Route path="/dashboard/front-office/guest-profiles" element={<GuestProfiles />} />
+              <Route path="/dashboard/front-office/reservation-list" element={<ReservationList />} />
             </Route>
             
             <Route path="*" element={<NotFound />} />

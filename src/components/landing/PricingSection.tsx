@@ -20,6 +20,7 @@ const plans = [
     name: "Professional",
     price: "₹10,000",
     period: "/year",
+    popular: true,
     description: "Advanced capabilities designed to meet growing business needs.",
     button: { label: "Go with this plan", action: () => {}, variant: "primary" },
     features: [
@@ -49,6 +50,7 @@ const plans = [
 
 const PricingSection = () => {
   const [billing, setBilling] = useState<'annually' | 'monthly'>('annually');
+  const [selectedPlan, setSelectedPlan] = useState<string>("Professional");
 
   const toggleBilling = () => {
     setBilling(billing === 'annually' ? 'monthly' : 'annually');
@@ -68,6 +70,11 @@ const PricingSection = () => {
   // Function to get the period text based on billing period
   const getPeriod = () => {
     return billing === 'annually' ? '/year' : '/month';
+  };
+
+  // Handle plan selection
+  const handleSelectPlan = (planName: string) => {
+    setSelectedPlan(planName);
   };
 
   return (
@@ -107,8 +114,18 @@ const PricingSection = () => {
           {plans.map((plan, index) => (
             <div 
               key={index}
-              className="flex flex-col p-6 bg-background rounded-3xl shadow-sm border border-border/50 hover:border-primary/30 transition-colors"
+              className={`flex flex-col p-6 bg-background rounded-3xl shadow-sm border transition-all duration-300 ease-in-out transform hover:-translate-y-2 hover:shadow-lg ${
+                selectedPlan === plan.name 
+                  ? "border-primary border-2" 
+                  : "border-border/50 hover:border-primary/30"
+              } ${plan.popular ? "relative" : ""}`}
+              onClick={() => handleSelectPlan(plan.name)}
             >
+              {plan.popular && (
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs font-bold py-1 px-3 rounded-full">
+                  MOST POPULAR
+                </div>
+              )}
               <h3 className="text-2xl font-semibold text-foreground">
                 {plan.name}
               </h3>
@@ -127,11 +144,15 @@ const PricingSection = () => {
               
               <a 
                 href="#" 
-                className={`flex justify-center items-center px-4 py-3 text-base font-medium tracking-tight text-center rounded-xl ${
-                  plan.name === "Professional"
+                className={`flex justify-center items-center px-4 py-3 text-base font-medium tracking-tight text-center rounded-xl transition-all duration-300 ${
+                  selectedPlan === plan.name
                     ? "bg-primary text-primary-foreground border border-primary shadow-[0px_1px_0px_rgba(27,31,35,0.2)]"
-                    : "border border-border text-foreground hover:border-primary/50 transition-colors"
+                    : "border border-border text-foreground hover:border-primary/50 hover:bg-primary/5"
                 }`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSelectPlan(plan.name);
+                }}
               >
                 {plan.button.label}
               </a>

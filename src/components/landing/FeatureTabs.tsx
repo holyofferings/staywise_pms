@@ -58,7 +58,7 @@ const FeatureTabs: React.FC = () => {
             />
           </div>
         </div>
-        <div className="flex overflow-hidden flex-col flex-1 shrink items-center px-10 pt-10 pb-5 max-w-md bg-background rounded-3xl shadow-sm basis-0 min-w-60 max-md:px-5 max-md:max-w-full">
+        <div className="flex overflow-hidden flex-col flex-1 shrink items-center px-10 pt-10 pb-5 max-w-md bg-background rounded-3xl border-2 border-black shadow-sm basis-0 min-w-60 max-md:px-5 max-md:max-w-full">
           <div className="px-0.5 pb-16 w-full text-lg tracking-normal max-w-[420px]">
             <h3 className="grow font-semibold text-foreground">
               Mobile Access

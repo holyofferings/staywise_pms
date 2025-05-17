@@ -223,7 +223,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 w-full">
         <div>
           <h1 className="text-2xl font-bold">Dashboard</h1>
           <p className="text-subtle">Welcome back to your hotel management dashboard</p>
@@ -264,7 +264,7 @@ const Dashboard: React.FC = () => {
         {/* Charts and data visualization */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {/* Revenue Chart */}
-          <Card className="card-custom">
+          <Card className="card-custom w-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div>
               <CardTitle>Revenue Overview</CardTitle>
@@ -398,7 +398,7 @@ const Dashboard: React.FC = () => {
           </Card>
           
           {/* Bookings Chart */}
-          <Card className="card-custom">
+          <Card className="card-custom w-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div>
               <CardTitle>Booking Analytics</CardTitle>
@@ -576,7 +576,7 @@ const Dashboard: React.FC = () => {
         </div>
         
         {/* Recent Activities */}
-        <Card className="card-custom">
+        <Card className="card-custom w-full">
           <CardHeader>
             <CardTitle>Recent Activities</CardTitle>
             <CardDescription>
