@@ -26,14 +26,8 @@ const HeroSection = () => {
   };
 
   const handleTalkToSales = () => {
-    // Scroll to contact form or pricing section with a query parameter
-    const pricingSection = document.getElementById('pricing');
-    if (pricingSection) {
-      pricingSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      
-      // You could also add a URL parameter if you want to show a contact form
-      // navigate('/#pricing?showContactForm=true');
-    }
+    // Navigate to the contact page
+    navigate('/contact');
   };
 
   return (

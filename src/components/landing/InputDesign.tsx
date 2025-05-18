@@ -3,10 +3,10 @@ import Header from "./Header";
 import HeroSection from "./HeroSection";
 import FeatureSection from "./FeatureSection";
 import PricingSection from "./PricingSection";
-import SecuritySection from "./SecuritySection";
 import PoweredBySection from "./PoweredBySection";
 import MoreFeaturesSection from "./MoreFeaturesSection";
-import TestimonialsGrid from "./TestimonialsGrid";
+import InfiniteTestimonialsScroll from "./TestimonialsGrid";
+import FAQSection from "./FAQSection";
 import CtaSection from "./CtaSection";
 import Footer from "./Footer";
 
@@ -61,8 +61,8 @@ const InputDesign = () => {
 
       <PricingSection />
       <MoreFeaturesSection />
-      <TestimonialsGrid />
-      <SecuritySection />
+      <InfiniteTestimonialsScroll />
+      <FAQSection />
       <PoweredBySection />
       <CtaSection />
       <Footer />

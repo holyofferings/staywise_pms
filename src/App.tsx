@@ -7,6 +7,10 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
+import ContactPage from "./pages/ContactPage";
+import ContactDemo from "./pages/ContactDemo";
+import DemoRequestPage from "./pages/DemoRequestPage";
+import MultiPropertyPage from "./pages/MultiPropertyPage";
 import Dashboard from "./pages/Dashboard";
 import RoomsManagement from "./pages/dashboard/RoomsManagement";
 import Bookings from "./pages/dashboard/Bookings";
@@ -44,6 +48,10 @@ const App = () => {
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/contact-demo" element={<ContactDemo />} />
+            <Route path="/request-demo" element={<DemoRequestPage />} />
+            <Route path="/multi-property" element={<MultiPropertyPage />} />
             
             
             {/* Protected Routes */}

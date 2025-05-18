@@ -50,8 +50,21 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
   onClick,
   subItems 
 }) => {
-  const [submenuOpen, setSubmenuOpen] = useState(false);
   const location = useLocation();
+  
+  // Check if any child route is active or if the current path starts with the parent path
+  const hasActiveChild = subItems?.some(item => location.pathname === item.to);
+  const isParentActive = subItems && location.pathname.startsWith(to);
+  
+  // Initialize submenu as open if a child is active or this link is active
+  const [submenuOpen, setSubmenuOpen] = useState(isActive || hasActiveChild || isParentActive);
+  
+  // Keep the submenu open if the route changes to one of its children
+  useEffect(() => {
+    if ((hasActiveChild || isParentActive) && !submenuOpen) {
+      setSubmenuOpen(true);
+    }
+  }, [location.pathname, hasActiveChild, isParentActive, submenuOpen]);
 
   const toggleSubmenu = (e: React.MouseEvent) => {
     if (subItems && subItems.length > 0) {
@@ -60,8 +73,6 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
     }
   };
 
-  const hasActiveChild = subItems?.some(item => location.pathname === item.to);
-
   return (
     <>
       {subItems && subItems.length > 0 ? (
@@ -69,7 +80,7 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
           variant="ghost"
           className={cn(
             "w-full justify-start gap-3 px-3",
-            (isActive || hasActiveChild)
+            (isActive || hasActiveChild || isParentActive)
               ? "bg-primary/10 text-primary" 
               : "text-sidebar-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
           )}
@@ -102,15 +113,16 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
 
       {/* Submenu items */}
       {subItems && subItems.length > 0 && submenuOpen && !collapsed && (
-        <div className="pl-10 space-y-1 mt-1">
-          {subItems.map((item, index) => (
-            <Link to={item.to} key={index} onClick={onClick}>
+        <div className="pl-9 space-y-1 mt-1">
+          {subItems.map((item, i) => (
+            <Link key={i} to={item.to} onClick={onClick}>
               <Button
                 variant="ghost"
+                size="sm"
                 className={cn(
-                  "w-full justify-start gap-2 px-3 py-1 h-8 text-sm",
-                  location.pathname === item.to 
-                    ? "bg-primary/10 text-primary" 
+                  "w-full justify-start gap-2 px-2",
+                  location.pathname === item.to
+                    ? "bg-primary/10 text-primary"
                     : "text-sidebar-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
                 )}
               >
@@ -127,8 +139,13 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
 
 export const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  
+  // Use localStorage to persist sidebar collapsed state
+  const [collapsed, setCollapsed] = useState(() => {
+    const savedState = localStorage.getItem('sidebar-collapsed');
+    return savedState ? JSON.parse(savedState) : false;
+  });
 
   const links = [
     { to: "/dashboard", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
@@ -159,6 +176,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
   const toggleSidebar = () => {
     const newCollapsedState = !collapsed;
     setCollapsed(newCollapsedState);
+    // Save to localStorage
+    localStorage.setItem('sidebar-collapsed', JSON.stringify(newCollapsedState));
+    
     if (onToggle) {
       onToggle(newCollapsedState);
     }
@@ -173,7 +193,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
     if (onToggle) {
       onToggle(collapsed);
     }
-  }, []);
+  }, [collapsed, onToggle]);
 
   return (
     <>
@@ -254,19 +274,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
           {/* Navigation links */}
           <nav className="flex-1 overflow-y-auto py-4 px-2">
             <ul className="space-y-1">
-              {links.map((link) => (
-                <li key={link.to}>
-                  <SidebarLink
-                    to={link.to}
-                    icon={link.icon}
-                    label={link.label}
-                    isActive={location.pathname === link.to}
-                    collapsed={collapsed}
-                    onClick={() => setMobileOpen(false)}
-                    subItems={link.subItems}
-                  />
-                </li>
-              ))}
+              {links.map((link) => {
+                // Check if the current path starts with this link's path for parent links
+                const isParentActive = link.subItems && location.pathname.startsWith(link.to);
+                
+                return (
+                  <li key={link.to}>
+                    <SidebarLink
+                      to={link.to}
+                      icon={link.icon}
+                      label={link.label}
+                      isActive={location.pathname === link.to || isParentActive}
+                      collapsed={collapsed}
+                      onClick={() => setMobileOpen(false)}
+                      subItems={link.subItems}
+                    />
+                  </li>
+                );
+              })}
             </ul>
           </nav>
 

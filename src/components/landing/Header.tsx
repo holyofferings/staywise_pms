@@ -21,6 +21,10 @@ const Header = () => {
     navigate('/signup');
   };
 
+  const handleContactSales = () => {
+    navigate('/contact');
+  };
+
   const handleLogoClick = () => {
     navigate('/');
   };
@@ -86,6 +90,7 @@ const Header = () => {
               >
                 Pricing
               </a>
+            
             </div>
             
           </div>

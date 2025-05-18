@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import '../../styles/animations.css';
 
 const MoreFeaturesSection = () => {
   const features = [
@@ -14,22 +15,22 @@ const MoreFeaturesSection = () => {
       description: "Intelligent scheduling and task assignment for cleaning staff with real-time status updates"
     },
     {
-      icon: "https://cdn.builder.io/api/v1/image/assets/TEMP/7a38caa0e05e0915a0ca3b69ea2d3e5301d41f62?placeholderIfAbsent=true&apiKey=602006ab0872494795ebb36066caa256",
+      icon: "public/images/network-analytic_14644373.png",
       title: "Multi-Channel Booking",
       description: "Centralize reservations from all online travel agencies and your own website in one dashboard"
     },
     {
-      icon: "https://cdn.builder.io/api/v1/image/assets/TEMP/6a18da3eb5b52bbfc0e1fa0c6d7d40c5b903e9de?placeholderIfAbsent=true&apiKey=602006ab0872494795ebb36066caa256",
+      icon: "public/images/meeting_13085465.png",
       title: "Guest Communication Hub",
       description: "Automated messaging for pre-arrival, during stay, and post-checkout with translation capabilities"
     },
     {
-      icon: "https://cdn.builder.io/api/v1/image/assets/TEMP/f90b6e2bc6f3acbe9afbbd0c0dc5a8a60b0e08db?placeholderIfAbsent=true&apiKey=602006ab0872494795ebb36066caa256",
+      icon: "public/images/chart-mixed_10483560.png",
       title: "Financial Analytics",
       description: "Comprehensive reporting on revenue, occupancy trends, and expense tracking with forecast projections"
     },
     {
-      icon: "https://cdn.builder.io/api/v1/image/assets/TEMP/77ec8b2d74fc2f11b21f3f6ebcdc2d95c6c20b24?placeholderIfAbsent=true&apiKey=602006ab0872494795ebb36066caa256",
+      icon: "public/images/digital-payment_17525023.png",
       title: "Mobile Check-In/Out",
       description: "Contactless arrival and departure process for guests with digital key card integration"
     }
@@ -49,18 +50,21 @@ const MoreFeaturesSection = () => {
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-md:max-w-full">
           {features.map((feature, index) => (
-            <div key={index} className="flex flex-col gap-4 p-6 border-2 border-black bg-background rounded-3xl shadow-sm max-md:px-5">
-              <div className="flex overflow-hidden justify-center items-start w-12 h-12 rounded-lg bg-primary/10">
+            <div 
+              key={index} 
+              className="group flex flex-col gap-4 p-6 border border-border bg-background rounded-3xl shadow-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 hover:border-primary/30 cursor-pointer"
+            >
+              <div className="flex overflow-hidden justify-center items-start w-12 h-12 rounded-lg bg-primary/10 transition-transform duration-300 ease-in-out group-hover:scale-110">
                 <img
                   src={feature.icon}
-                  className="object-contain w-6 aspect-square m-3"
+                  className="object-contain w-6 aspect-square m-3 transition-transform duration-300 group-hover:scale-110"
                   alt={feature.title}
                 />
               </div>
-              <h3 className="text-xl font-semibold tracking-tight text-foreground">
+              <h3 className="text-xl font-semibold tracking-tight text-foreground transition-colors duration-300 group-hover:text-primary">
                 {feature.title}
               </h3>
-              <p className="text-base font-medium leading-6 text-foreground/80">
+              <p className="text-base font-medium leading-6 text-foreground/80 transition-colors duration-300 group-hover:text-foreground">
                 {feature.description}
               </p>
             </div>

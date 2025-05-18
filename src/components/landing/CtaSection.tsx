@@ -35,10 +35,7 @@ const CtaSection = () => {
   };
 
   const handleScheduleDemo = () => {
-    const pricingSection = document.getElementById('pricing');
-    if (pricingSection) {
-      pricingSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    navigate('/contact');
   };
 
   return (
